@@ -18,8 +18,6 @@ Asegúrate de tener instaladas las siguientes herramientas en tu sistema antes d
   node -v
   ```
 
-````
-
 ### 2. **pnpm**
 
 - Instalamos **pnpm** como nuestro gestor de paquetes:
@@ -162,4 +160,3 @@ Para contribuir al proyecto, sigue estos pasos:
 ### 8. Soporte
 
 Si tienes alguna duda o problema al configurar el proyecto, no dudes en preguntar.
-````
