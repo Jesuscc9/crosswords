@@ -1,5 +1,9 @@
 import Crossword from '@jaredreisinger/react-crossword'
 import { ThemeProvider } from '@jaredreisinger/react-crossword'
+import { Grid2, Typography } from '@mui/material'
+import Box from '@mui/material/Box'
+import useSession from './context/SessionContext/useSession'
+import { LogoutButton } from './components/LogoutButton'
 
 const data = {
   across: {
@@ -44,13 +48,29 @@ const data = {
   }
 }
 
-function App() {
+export default function App() {
+  const { session, userRole } = useSession()
+  console.log({ userRole })
+
   return (
-    <div className='w-screen h-screen grid place-items-center'>
-      <div className='w-[500px]'>
-        <h1 className='text-3xl text-center font-bold mb-10'>
+    <Grid2
+      container
+      display='grid'
+      height='100vh'
+      sx={{
+        placeItems: 'center'
+      }}
+    >
+      <Box width={500}>
+        <Typography
+          variant='h4'
+          fontWeight='bold'
+          textAlign='center'
+          gutterBottom
+          mb={4}
+        >
           Crucigrama de Scrum
-        </h1>
+        </Typography>
         <ThemeProvider
           theme={{
             textColor: '#000'
@@ -58,9 +78,8 @@ function App() {
         >
           <Crossword acrossLabel='Horizontal' data={data} />
         </ThemeProvider>
-      </div>
-    </div>
+      </Box>
+      {session ? <LogoutButton /> : null}
+    </Grid2>
   )
 }
-
-export default App
