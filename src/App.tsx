@@ -50,7 +50,6 @@ const data = {
 
 export default function App() {
   const { session, userRole } = useSession()
-  console.log({ userRole })
 
   return (
     <Grid2
