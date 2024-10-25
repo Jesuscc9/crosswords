@@ -63,13 +63,13 @@ Asegúrate de tener instaladas las siguientes herramientas en tu sistema antes d
 Primero, clona el repositorio a tu máquina local. Abre una terminal o consola y ejecuta el siguiente comando:
 
 ```bash
-git clone <URL_DEL_REPOSITORIO>
+git clone https://github.com/Jesuscc9/crosswords.git
 ```
 
 Luego, entra en el directorio del proyecto:
 
 ```bash
-cd <NOMBRE_DEL_REPOSITORIO>
+cd crosswords
 ```
 
 ### 2. Instalar dependencias
