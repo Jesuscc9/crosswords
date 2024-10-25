@@ -1,6 +1,5 @@
 ### **README.md**
 
-````markdown
 # Proyecto SPA con React, TypeScript y Vite
 
 Este es un proyecto de una **Single Page Application (SPA)** utilizando **React**, **TypeScript**, y **Vite** como nuestro compilador. El gestor de paquetes que utilizamos es **pnpm** para una instalación más rápida y eficiente. A continuación, les explico cómo instalar y configurar el proyecto para empezar a trabajar en él :)
@@ -18,6 +17,7 @@ Asegúrate de tener instaladas las siguientes herramientas en tu sistema antes d
   ```bash
   node -v
   ```
+
 ````
 
 ### 2. **pnpm**
@@ -162,3 +162,4 @@ Para contribuir al proyecto, sigue estos pasos:
 ### 8. Soporte
 
 Si tienes alguna duda o problema al configurar el proyecto, no dudes en preguntar.
+````
