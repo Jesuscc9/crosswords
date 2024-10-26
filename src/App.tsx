@@ -1,6 +1,6 @@
 import Crossword from '@jaredreisinger/react-crossword'
 import { ThemeProvider } from '@jaredreisinger/react-crossword'
-import { Grid2, Typography } from '@mui/material'
+import { Container, Grid2, Typography } from '@mui/material'
 import Box from '@mui/material/Box'
 import useSession from './context/SessionContext/useSession'
 import { LogoutButton } from './components/LogoutButton'
@@ -49,7 +49,7 @@ const data = {
 }
 
 export default function App() {
-  const { session, userRole } = useSession()
+  const { session } = useSession()
 
   return (
     <Grid2
@@ -60,7 +60,7 @@ export default function App() {
         placeItems: 'center'
       }}
     >
-      <Box width={500}>
+      <Box width={500} maxWidth={'96vw'}>
         <Typography
           variant='h4'
           fontWeight='bold'
@@ -77,8 +77,15 @@ export default function App() {
         >
           <Crossword acrossLabel='Horizontal' data={data} />
         </ThemeProvider>
+        <Container
+          sx={{
+            width: '100%',
+            textAlign: 'center'
+          }}
+        >
+          {session ? <LogoutButton /> : null}
+        </Container>
       </Box>
-      {session ? <LogoutButton /> : null}
     </Grid2>
   )
 }
