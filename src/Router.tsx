@@ -4,14 +4,25 @@ import Login from './pages/LoginPage'
 import SessionProvider from './context/SessionContext/SessionProvider'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { PublicRoute } from './components/PublicRoute'
+import Register from './pages/SignupPage'
 
 export const router = createBrowserRouter([
   {
-    path: '/',
+    path: '*',
     element: (
       <SessionProvider>
         <PublicRoute>
           <Login />
+        </PublicRoute>
+      </SessionProvider>
+    )
+  },
+  {
+    path: '/register',
+    element: (
+      <SessionProvider>
+        <PublicRoute>
+          <Register />
         </PublicRoute>
       </SessionProvider>
     )

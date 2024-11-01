@@ -10,7 +10,7 @@ import {
 import Button from '@mui/lab/LoadingButton'
 import LoginImageBg from '../assets/loginbg.avif'
 import { supabase } from '../services/supabase'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 
@@ -135,6 +135,15 @@ export default function Login() {
               >
                 {formik.isSubmitting ? 'Cargando...' : 'Iniciar sesión'}
               </Button>
+
+              <Box sx={{ mt: 2 }}>
+                <Typography variant='body2'>
+                  ¿No tienes cuenta?{' '}
+                  <Link to='/register' style={{ color: '#1976d2' }}>
+                    Regístrate aquí
+                  </Link>
+                </Typography>
+              </Box>
             </Box>
           </Box>
         </Container>
