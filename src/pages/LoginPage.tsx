@@ -133,7 +133,7 @@ export default function Login() {
                 disabled={formik.isSubmitting}
                 loading={formik.isSubmitting}
               >
-                {formik.isSubmitting ? 'Cargando...' : 'Iniciar sesión'}
+                {formik.isSubmitting ? 'Cargando...' : 'Continuar'}
               </Button>
 
               <Box sx={{ mt: 2 }}>
