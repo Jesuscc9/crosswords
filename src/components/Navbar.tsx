@@ -13,14 +13,15 @@ import { Link } from 'react-router-dom'
 import AccountCircle from '@mui/icons-material/AccountCircle'
 import MenuIcon from '@mui/icons-material/Menu'
 import Notifications from '@mui/icons-material/Notifications'
-import useSession from '../../../context/SessionContext/useSession'
-import SessionContext from '../../../context/SessionContext/SessionContext'
+import useSession from '../context/SessionContext/useSession'
+import SessionContext from '../context/SessionContext/SessionContext'
 import useSWR from 'swr'
-import { profileService } from '../../../services/models/profile/'
 import MuiAppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
 import styled from '@mui/material/styles/styled'
 import { KeyboardArrowDown } from '@mui/icons-material'
+import { supabase } from '../services/supabase'
+import { UserResponse } from '@supabase/supabase-js'
 
 const AppBar = styled(MuiAppBar)(({ theme }) => ({
   transition: theme.transitions.create(['margin', 'width'], {
@@ -31,32 +32,28 @@ const AppBar = styled(MuiAppBar)(({ theme }) => ({
 
 const pages = [
   {
-    title: 'En vivo',
-    path: '/live'
+    title: 'Inicio',
+    path: '/crosswords'
   },
   {
-    title: 'Lecturas',
-    path: '/readings'
+    title: 'Perfil',
+    path: '/profile'
   },
   {
-    title: 'Usuarios',
+    title: 'Crear un crucigrama',
     path: '/users',
     role: ['admin']
-  },
-  {
-    title: 'DEAs',
-    path: '/deas',
-    children: [
-      { title: 'Dispositivos', path: '/devices', role: ['admin'] },
-      { title: 'Imeis', path: '/imeis', role: ['admin'] },
-      { title: 'Ubicaciones de DEAS', path: '/deas-locations' }
-    ]
   }
 ]
 
 export const Navbar = () => {
   const { signOut } = useSession()
-  const { data } = useSWR('/profile', profileService.get)
+  const { data } = useSWR<UserResponse>('/profile', () => {
+    return supabase.auth.getUser()
+  })
+
+  console.log({ data })
+
   const { userRole } = useContext(SessionContext)
 
   const [anchorElNav, setAnchorElNav] = useState(null)
@@ -171,7 +168,14 @@ export const Navbar = () => {
             )}
           </Menu>
         </Box>
-        <img className='h-[40px] pr-4' src='/assets/favicon.avif' />
+        <img
+          width={20}
+          height={20}
+          style={{
+            marginRight: '10px'
+          }}
+          src='/favicon/favicon.svg'
+        />
         <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
           {filteredPages.map((page) =>
             page.children ? (
@@ -238,12 +242,12 @@ export const Navbar = () => {
           </Menu>
           <Tooltip title='Abrir ajustes'>
             <Button color='inherit' size='large' onClick={handleOpenUserMenu}>
-              {data?.first_name ? (
+              {data?.data.user ? (
                 <Typography color='white' className='capitalize mr-2'>
-                  {data?.first_name}
-                  <span className={`${data?.last_name ? 'ml-2' : 'm-0'}`}>
+                  {data.data.user.email}
+                  {/* <span className={`${data?.last_name ? 'ml-2' : 'm-0'}`}>
                     {data?.last_name}
-                  </span>
+                  </span> */}
                 </Typography>
               ) : null}
               <AccountCircle className='ml-3' />

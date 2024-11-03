@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Box,
   TextField,
@@ -16,10 +16,11 @@ import * as Yup from 'yup'
 
 export default function Register() {
   const navigate = useNavigate()
+  const [isRegistered, setIsRegistered] = useState(false)
 
   // Validaciones con Yup
   const validationSchema = Yup.object({
-    name: Yup.string().required('El nombre es requerido'),
+    username: Yup.string().required('El nombre de usuario es requerido'),
     email: Yup.string()
       .email('Correo electrónico no válido')
       .required('El correo electrónico es requerido'),
@@ -34,7 +35,7 @@ export default function Register() {
   // Formik Hook
   const formik = useFormik({
     initialValues: {
-      name: '',
+      username: '',
       email: '',
       password: '',
       confirmPassword: ''
@@ -42,22 +43,21 @@ export default function Register() {
     validationSchema: validationSchema,
     onSubmit: async (values, { setSubmitting, setFieldError }) => {
       setSubmitting(true)
-      const { name, email, password } = values
+      const { username, email, password } = values
 
+      // Registramos al usuario en Supabase
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { name }
+          data: { username } // Enviar username en lugar de name
         }
       })
 
       if (error) {
         setFieldError('general', error.message)
       } else {
-        navigate('/login', {
-          replace: true
-        })
+        setIsRegistered(true)
       }
 
       setSubmitting(false)
@@ -82,109 +82,139 @@ export default function Register() {
               alignItems: 'center'
             }}
           >
-            <Typography component='h1' variant='h5'>
-              Crear cuenta
-            </Typography>
-
-            <Box component='form' onSubmit={formik.handleSubmit} sx={{ mt: 3 }}>
-              <TextField
-                variant='outlined'
-                margin='normal'
-                required
-                fullWidth
-                id='name'
-                label='Nombre'
-                name='name'
-                autoComplete='name'
-                autoFocus
-                value={formik.values.name}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.name && Boolean(formik.errors.name)}
-                helperText={formik.touched.name && formik.errors.name}
-              />
-              <TextField
-                variant='outlined'
-                margin='normal'
-                required
-                fullWidth
-                id='email'
-                label='Correo electrónico'
-                name='email'
-                autoComplete='email'
-                value={formik.values.email}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.email && Boolean(formik.errors.email)}
-                helperText={formik.touched.email && formik.errors.email}
-              />
-              <TextField
-                variant='outlined'
-                margin='normal'
-                required
-                fullWidth
-                name='password'
-                label='Contraseña'
-                type='password'
-                id='password'
-                autoComplete='new-password'
-                value={formik.values.password}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={
-                  formik.touched.password && Boolean(formik.errors.password)
-                }
-                helperText={formik.touched.password && formik.errors.password}
-              />
-              <TextField
-                variant='outlined'
-                margin='normal'
-                required
-                fullWidth
-                name='confirmPassword'
-                label='Confirmar contraseña'
-                type='password'
-                id='confirmPassword'
-                autoComplete='new-password'
-                value={formik.values.confirmPassword}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={
-                  formik.touched.confirmPassword &&
-                  Boolean(formik.errors.confirmPassword)
-                }
-                helperText={
-                  formik.touched.confirmPassword &&
-                  formik.errors.confirmPassword
-                }
-              />
-
-              {formik.errors.general && (
-                <Alert severity='error'>{formik.errors.general}</Alert>
-              )}
-
-              <Button
-                type='submit'
-                fullWidth
-                size='large'
-                variant='contained'
-                color='primary'
-                sx={{ mt: 3, mb: 2 }}
-                disabled={formik.isSubmitting}
-                loading={formik.isSubmitting}
-              >
-                {formik.isSubmitting ? 'Registrando...' : 'Crear cuenta'}
-              </Button>
-
-              <Box sx={{ mt: 2 }}>
-                <Typography variant='body2'>
-                  ¿Ya tienes cuenta?{' '}
-                  <Link to='/login' style={{ color: '#1976d2' }}>
-                    Inicia sesión aquí
-                  </Link>
+            {!isRegistered ? (
+              <>
+                <Typography component='h1' variant='h5'>
+                  Crear cuenta
                 </Typography>
+                <Box
+                  component='form'
+                  onSubmit={formik.handleSubmit}
+                  sx={{ mt: 3 }}
+                >
+                  <TextField
+                    variant='outlined'
+                    margin='normal'
+                    required
+                    fullWidth
+                    id='username'
+                    label='Nombre de usuario'
+                    name='username'
+                    autoComplete='username'
+                    autoFocus
+                    value={formik.values.username}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.username && Boolean(formik.errors.username)
+                    }
+                    helperText={
+                      formik.touched.username && formik.errors.username
+                    }
+                  />
+                  <TextField
+                    variant='outlined'
+                    margin='normal'
+                    required
+                    fullWidth
+                    id='email'
+                    label='Correo electrónico'
+                    name='email'
+                    autoComplete='email'
+                    value={formik.values.email}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.email && Boolean(formik.errors.email)}
+                    helperText={formik.touched.email && formik.errors.email}
+                  />
+                  <TextField
+                    variant='outlined'
+                    margin='normal'
+                    required
+                    fullWidth
+                    name='password'
+                    label='Contraseña'
+                    type='password'
+                    id='password'
+                    autoComplete='new-password'
+                    value={formik.values.password}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.password && Boolean(formik.errors.password)
+                    }
+                    helperText={
+                      formik.touched.password && formik.errors.password
+                    }
+                  />
+                  <TextField
+                    variant='outlined'
+                    margin='normal'
+                    required
+                    fullWidth
+                    name='confirmPassword'
+                    label='Confirmar contraseña'
+                    type='password'
+                    id='confirmPassword'
+                    autoComplete='new-password'
+                    value={formik.values.confirmPassword}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.confirmPassword &&
+                      Boolean(formik.errors.confirmPassword)
+                    }
+                    helperText={
+                      formik.touched.confirmPassword &&
+                      formik.errors.confirmPassword
+                    }
+                  />
+
+                  {formik.errors.general && (
+                    <Alert severity='error'>{formik.errors.general}</Alert>
+                  )}
+
+                  <Button
+                    type='submit'
+                    fullWidth
+                    size='large'
+                    variant='contained'
+                    color='primary'
+                    sx={{ mt: 3, mb: 2 }}
+                    disabled={formik.isSubmitting}
+                    loading={formik.isSubmitting}
+                  >
+                    {formik.isSubmitting ? 'Registrando...' : 'Crear cuenta'}
+                  </Button>
+
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant='body2'>
+                      ¿Ya tienes cuenta?{' '}
+                      <Link to='/login' style={{ color: '#1976d2' }}>
+                        Inicia sesión aquí
+                      </Link>
+                    </Typography>
+                  </Box>
+                </Box>
+              </>
+            ) : (
+              <Box sx={{ mt: 3, textAlign: 'center' }}>
+                <Typography variant='h5' gutterBottom>
+                  Registro exitoso
+                </Typography>
+                <Typography variant='body1' sx={{ mb: 3 }}>
+                  Revisa tu correo (y tu carpeta de spam) y haz clic en el
+                  enlace de confirmación para activar tu cuenta.
+                </Typography>
+                <Button
+                  variant='contained'
+                  color='primary'
+                  onClick={() => navigate('/login')}
+                >
+                  Ir a Iniciar Sesión
+                </Button>
               </Box>
-            </Box>
+            )}
           </Box>
         </Container>
       </Grid2>

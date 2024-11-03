@@ -5,6 +5,8 @@ import SessionProvider from './context/SessionContext/SessionProvider'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { PublicRoute } from './components/PublicRoute'
 import Register from './pages/SignupPage'
+import { Crosswords } from './pages/Crosswords'
+import MailConfirmation from './pages/MailConfirmation'
 
 export const router = createBrowserRouter([
   {
@@ -28,7 +30,17 @@ export const router = createBrowserRouter([
     )
   },
   {
-    path: 'app',
+    path: '/crosswords',
+    element: (
+      <SessionProvider>
+        <ProtectedRoute>
+          <Crosswords />
+        </ProtectedRoute>
+      </SessionProvider>
+    )
+  },
+  {
+    path: '/crossword/:id',
     element: (
       <SessionProvider>
         <ProtectedRoute>
@@ -36,5 +48,10 @@ export const router = createBrowserRouter([
         </ProtectedRoute>
       </SessionProvider>
     )
+  },
+
+  {
+    path: '/mail-confirmation',
+    element: <MailConfirmation />
   }
 ])

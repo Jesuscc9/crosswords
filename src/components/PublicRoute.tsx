@@ -4,12 +4,10 @@ import useSession from '../context/SessionContext/useSession'
 
 export const PublicRoute = ({ children }) => {
   const { session } = useSession()
-  const navigate = useNavigate()
-  console.log({ session })
 
   if (!session) {
     return <>{children}</>
   }
 
-  return navigate('/app', { replace: true })
+  return <Navigate to='/crosswords' replace />
 }
