@@ -1,6 +1,6 @@
 import Button from '@mui/material/Button'
 import React from 'react'
-import useSession from '../context/SessionContext/useSession'
+import useSession from '../hooks/useSession'
 
 export const LogoutButton: React.FC = () => {
   const { signOut } = useSession()

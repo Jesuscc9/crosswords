@@ -13,15 +13,11 @@ import { Link } from 'react-router-dom'
 import AccountCircle from '@mui/icons-material/AccountCircle'
 import MenuIcon from '@mui/icons-material/Menu'
 import Notifications from '@mui/icons-material/Notifications'
-import useSession from '../context/SessionContext/useSession'
-import SessionContext from '../context/SessionContext/SessionContext'
-import useSWR from 'swr'
+import useSession from '../hooks/useSession'
 import MuiAppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
 import styled from '@mui/material/styles/styled'
 import { KeyboardArrowDown } from '@mui/icons-material'
-import { supabase } from '../services/supabase'
-import { UserResponse } from '@supabase/supabase-js'
 
 const AppBar = styled(MuiAppBar)(({ theme }) => ({
   transition: theme.transitions.create(['margin', 'width'], {
@@ -33,28 +29,22 @@ const AppBar = styled(MuiAppBar)(({ theme }) => ({
 const pages = [
   {
     title: 'Inicio',
-    path: '/crosswords'
+    path: '/app/crosswords'
   },
-  {
-    title: 'Perfil',
-    path: '/profile'
-  },
+
   {
     title: 'Crear un crucigrama',
-    path: '/users',
+    path: '/app/crosswords/new',
     role: ['admin']
   }
 ]
 
 export const Navbar = () => {
   const { signOut } = useSession()
-  const { data } = useSWR<UserResponse>('/profile', () => {
-    return supabase.auth.getUser()
-  })
 
-  console.log({ data })
+  // const session = supabase.auth.getSession()
 
-  const { userRole } = useContext(SessionContext)
+  const { userRole } = useSession()
 
   const [anchorElNav, setAnchorElNav] = useState(null)
   const [anchorElUser, setAnchorElUser] = useState(null)
@@ -207,14 +197,14 @@ export const Navbar = () => {
                 </Menu>
               </div>
             ) : (
-              <Button
-                key={page.path}
-                href={page.path}
-                onClick={handleCloseNavMenu}
-                sx={{ my: 2, color: 'white', display: 'block' }}
-              >
-                {page.title}
-              </Button>
+              <Link to={page.path} key={page.path}>
+                <Button
+                  sx={{ my: 2, color: 'white', display: 'block' }}
+                  onClick={handleCloseNavMenu}
+                >
+                  {page.title}
+                </Button>
+              </Link>
             )
           )}
         </Box>
@@ -242,14 +232,14 @@ export const Navbar = () => {
           </Menu>
           <Tooltip title='Abrir ajustes'>
             <Button color='inherit' size='large' onClick={handleOpenUserMenu}>
-              {data?.data.user ? (
+              {/* {data?.data.user ? (
                 <Typography color='white' className='capitalize mr-2'>
                   {data.data.user.email}
-                  {/* <span className={`${data?.last_name ? 'ml-2' : 'm-0'}`}>
+                  <span className={`${data?.last_name ? 'ml-2' : 'm-0'}`}>
                     {data?.last_name}
-                  </span> */}
+                  </span>
                 </Typography>
-              ) : null}
+              ) : null} */}
               <AccountCircle className='ml-3' />
             </Button>
           </Tooltip>

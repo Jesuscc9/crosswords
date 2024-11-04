@@ -1,6 +1,5 @@
-import React from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
-import useSession from '../context/SessionContext/useSession'
+import { Navigate } from 'react-router-dom'
+import useSession from '../hooks/useSession'
 
 export const PublicRoute = ({ children }) => {
   const { session } = useSession()
@@ -9,5 +8,5 @@ export const PublicRoute = ({ children }) => {
     return <>{children}</>
   }
 
-  return <Navigate to='/crosswords' replace />
+  return <Navigate to='/app/crosswords' replace />
 }

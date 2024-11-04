@@ -19,8 +19,6 @@ export default function Login() {
   const location = useLocation()
   const routeError = location?.state?.error
 
-  console.log({ routeError })
-
   // Validaciones con Yup
   const validationSchema = Yup.object({
     email: Yup.string()
@@ -50,7 +48,7 @@ export default function Login() {
       if (error) {
         setFieldError('general', error.message)
       } else {
-        navigate('/app', {
+        navigate('/app/crosswords', {
           replace: true
         })
       }

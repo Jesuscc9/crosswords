@@ -1,24 +1,16 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Outlet } from 'react-router-dom'
 import App from './App'
 import Login from './pages/LoginPage'
 import SessionProvider from './context/SessionContext/SessionProvider'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { PublicRoute } from './components/PublicRoute'
 import Register from './pages/SignupPage'
-import { Crosswords } from './pages/Crosswords'
+import CrosswordsListPage from './pages/CrosswordsListPage'
 import MailConfirmation from './pages/MailConfirmation'
+import { NewCrossword } from './pages/NewCrossword'
+import { AppLayout } from './components/AppLayout'
 
 export const router = createBrowserRouter([
-  {
-    path: '*',
-    element: (
-      <SessionProvider>
-        <PublicRoute>
-          <Login />
-        </PublicRoute>
-      </SessionProvider>
-    )
-  },
   {
     path: '/register',
     element: (
@@ -30,28 +22,46 @@ export const router = createBrowserRouter([
     )
   },
   {
-    path: '/crosswords',
+    path: '/app',
     element: (
       <SessionProvider>
         <ProtectedRoute>
-          <Crosswords />
+          <AppLayout>
+            <Outlet />
+          </AppLayout>
+          {/* render nested route */}
         </ProtectedRoute>
       </SessionProvider>
-    )
+    ),
+    children: [
+      {
+        path: 'crosswords',
+        element: <CrosswordsListPage />,
+        children: [
+          {
+            path: ':id',
+            element: <CrosswordsListPage />
+          }
+        ]
+      },
+      {
+        path: 'crosswords/new',
+        element: <NewCrossword />
+      }
+    ]
   },
-  {
-    path: '/crossword/:id',
-    element: (
-      <SessionProvider>
-        <ProtectedRoute>
-          <App />
-        </ProtectedRoute>
-      </SessionProvider>
-    )
-  },
-
   {
     path: '/mail-confirmation',
     element: <MailConfirmation />
+  },
+  {
+    path: '*',
+    element: (
+      <SessionProvider>
+        <PublicRoute>
+          <Login />
+        </PublicRoute>
+      </SessionProvider>
+    )
   }
 ])

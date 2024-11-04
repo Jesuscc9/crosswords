@@ -29,10 +29,6 @@ export default function SessionProvider({ children }) {
     })
   }, [])
 
-  useEffect(() => {
-    console.log({ session })
-  }, [session])
-
   const signOut = () => {
     supabase.auth.signOut()
   }
