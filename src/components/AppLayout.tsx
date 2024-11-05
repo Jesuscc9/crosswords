@@ -6,22 +6,28 @@ export const AppLayout = ({ children }) => {
   return (
     <Grid2
       container
-      direction={'column'}
+      wrap='wrap'
       sx={{
         backgroundImage: `url('${AppBg}')`,
         backgroundSize: 'cover',
         height: '100vh',
-        width: '100vw'
+        maxHeight: '100vh',
+        width: '100vw',
+        maxWidth: '100vw',
+        overflow: 'auto'
       }}
     >
-      <Grid2 size={12}>
+      <Grid2 size={12} zIndex={1} position='fixed'>
         <Navbar></Navbar>
-        <Box position='relative' zIndex={0}>
-          <div className='clouds'></div>
-          <div className='clouds backwards'></div>
-        </Box>
       </Grid2>
-      <Grid2 size={12}>{children}</Grid2>
+      <Box position='absolute'>
+        <div className='clouds'></div>
+        <div className='clouds backwards'></div>
+      </Box>
+      <br />
+      <Grid2 size={12} pt={2}>
+        {children}
+      </Grid2>
     </Grid2>
   )
 }

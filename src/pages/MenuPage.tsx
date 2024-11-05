@@ -1,11 +1,10 @@
 import React from 'react'
 import 'nes.css/css/nes.min.css'
-import ScrumIcon from '../assets/scrum-icon.png'
 import { Box } from '@mui/material'
 
 export const MenuPage: React.FC = () => {
   return (
-    <Box p={2} mt={6} width={800} mx='auto'>
+    <Box p={2} mt={10} width={900} maxWidth='90%' mx='auto'>
       <section className=''>
         <section className='message-list'>
           <Box
@@ -33,12 +32,12 @@ export const MenuPage: React.FC = () => {
           gap: '2rem',
           marginTop: '4rem',
           justifyContent: 'center',
-          flexDirection: 'column'
+          flexDirection: 'row'
         }}
       >
         <button
           className='nes-btn is-primary'
-          style={{ padding: '2rem', fontSize: '1.5rem' }}
+          style={{ padding: '2rem', fontSize: '1.5rem', width: '100%' }}
         >
           SCRUM
           <br />
@@ -46,16 +45,34 @@ export const MenuPage: React.FC = () => {
           {/* <div>
             <img src={ScrumIcon} width={50} height={50} />
           </div> */}
-          <progress className='nes-progress' value='90' max='100'></progress>
+          <Box display='flex' alignItems='center' gap={2}>
+            <progress className='nes-progress' value='30' max='100'></progress>
+            <p
+              style={{
+                margin: 0
+              }}
+            >
+              30%
+            </p>
+          </Box>
         </button>
         <button
           className='nes-btn is-warning'
-          style={{ padding: '2rem', fontSize: '1.5rem' }}
+          style={{ padding: '2rem', fontSize: '1.5rem', width: '100%' }}
         >
-          PEMBOK
+          PMBOK
           <br />
           <br />
-          <progress className='nes-progress' value='90' max='100'></progress>
+          <Box display='flex' alignItems='center' gap={2}>
+            <progress className='nes-progress' value='90' max='100'></progress>
+            <p
+              style={{
+                margin: 0
+              }}
+            >
+              90%
+            </p>
+          </Box>
         </button>
       </div>
     </Box>

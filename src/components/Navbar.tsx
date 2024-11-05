@@ -20,6 +20,7 @@ import styled from '@mui/material/styles/styled'
 import { KeyboardArrowDown } from '@mui/icons-material'
 
 const AppBar = styled(MuiAppBar)(({ theme }) => ({
+  opacity: 0.9,
   transition: theme.transitions.create(['margin', 'width'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen
