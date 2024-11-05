@@ -9,6 +9,7 @@ import CrosswordsListPage from './pages/CrosswordsListPage'
 import MailConfirmation from './pages/MailConfirmation'
 import { NewCrossword } from './pages/NewCrossword'
 import { AppLayout } from './components/AppLayout'
+import CrosswordPage from './pages/CrosswordPage'
 
 export const router = createBrowserRouter([
   {
@@ -36,13 +37,11 @@ export const router = createBrowserRouter([
     children: [
       {
         path: 'crosswords',
-        element: <CrosswordsListPage />,
-        children: [
-          {
-            path: ':id',
-            element: <CrosswordsListPage />
-          }
-        ]
+        element: <CrosswordsListPage />
+      },
+      {
+        path: 'crosswords/:id',
+        element: <CrosswordPage />
       },
       {
         path: 'crosswords/new',

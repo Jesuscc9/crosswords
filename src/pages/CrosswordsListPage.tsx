@@ -10,20 +10,42 @@ import {
   TableHead,
   TableRow,
   Button,
+  Paper,
   Dialog,
   DialogTitle,
   DialogContent,
-  IconButton,
-  Paper
+  DialogActions
 } from '@mui/material'
+import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
-import Crossword from '@jaredreisinger/react-crossword'
-import CloseIcon from '@mui/icons-material/Close'
+
+// Hook personalizado para gestionar localStorage
+function useLocalStorage(key, initialValue) {
+  const [storedValue, setStoredValue] = useState(() => {
+    try {
+      const item = window.localStorage.getItem(key)
+      return item ? JSON.parse(item) : initialValue
+    } catch (error) {
+      console.error(error)
+      return initialValue
+    }
+  })
+
+  const setValue = (value) => {
+    try {
+      setStoredValue(value)
+      window.localStorage.setItem(key, JSON.stringify(value))
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  return [storedValue, setValue]
+}
 
 export default function CrosswordsListPage() {
   const [crosswords, setCrosswords] = useState([])
-  const [previewOpen, setPreviewOpen] = useState(false)
-  const [selectedCrossword, setSelectedCrossword] = useState(null)
+  const [showWelcome, setShowWelcome] = useLocalStorage('showWelcome', true)
 
   useEffect(() => {
     // Función para cargar los crucigramas de la base de datos
@@ -39,14 +61,8 @@ export default function CrosswordsListPage() {
     fetchCrosswords()
   }, [])
 
-  const handlePreviewOpen = (crossword) => {
-    setSelectedCrossword(crossword)
-    setPreviewOpen(true)
-  }
-
-  const handlePreviewClose = () => {
-    setSelectedCrossword(null)
-    setPreviewOpen(false)
+  const handleCloseWelcome = () => {
+    setShowWelcome(false)
   }
 
   return (
@@ -82,9 +98,10 @@ export default function CrosswordsListPage() {
                   <TableCell>
                     <Button
                       variant='outlined'
-                      onClick={() => handlePreviewOpen(crossword)}
+                      component={Link}
+                      to={`${crossword.id}`}
                     >
-                      Previsualizar
+                      Ver Crucigrama
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -93,41 +110,21 @@ export default function CrosswordsListPage() {
           </Table>
         </TableContainer>
 
-        {/* Dialogo para la previsualización del crucigrama */}
-        <Dialog
-          open={previewOpen}
-          onClose={handlePreviewClose}
-          maxWidth='md'
-          fullWidth
-        >
-          <DialogTitle>
-            Previsualización de Crucigrama
-            <IconButton
-              aria-label='close'
-              onClick={handlePreviewClose}
-              sx={{
-                position: 'absolute',
-                right: 8,
-                top: 8,
-                color: (theme) => theme.palette.grey[500]
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
+        {/* Diálogo de Bienvenida */}
+        <Dialog open={showWelcome} onClose={handleCloseWelcome}>
+          <DialogTitle>Bienvenido a la Lista de Crucigramas</DialogTitle>
           <DialogContent dividers>
-            {selectedCrossword && selectedCrossword.data ? (
-              <Crossword
-                data={selectedCrossword.data}
-                acrossLabel='Horizontal'
-                downLabel='Vertical'
-              />
-            ) : (
-              <Typography variant='body2' color='textSecondary'>
-                No se pudo cargar el crucigrama.
-              </Typography>
-            )}
+            <Typography variant='body2' color='textSecondary'>
+              ¡Bienvenido! Aquí podrás ver y seleccionar diferentes crucigramas
+              para jugar. Explora la lista y elige un crucigrama para comenzar.
+              ¡Diviértete y disfruta del desafío!
+            </Typography>
           </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseWelcome} color='primary'>
+              Comenzar
+            </Button>
+          </DialogActions>
         </Dialog>
       </Box>
     </Container>
