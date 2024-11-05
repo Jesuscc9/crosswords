@@ -1,18 +1,10 @@
 import React, { useState } from 'react'
-import {
-  Box,
-  TextField,
-  Typography,
-  Container,
-  Alert,
-  Grid2
-} from '@mui/material'
-import Button from '@mui/lab/LoadingButton'
-import RegisterImageBg from '../assets/loginbg.avif'
 import { supabase } from '../services/supabase'
 import { useNavigate, Link } from 'react-router-dom'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
+import RegisterImageBg from '../assets/loginbg.avif'
+import 'nes.css/css/nes.min.css'
 
 export default function Register() {
   const navigate = useNavigate()
@@ -45,12 +37,11 @@ export default function Register() {
       setSubmitting(true)
       const { username, email, password } = values
 
-      // Registramos al usuario en Supabase
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { username } // Enviar username en lugar de name
+          data: { username }
         }
       })
 
@@ -65,176 +56,171 @@ export default function Register() {
   })
 
   return (
-    <Grid2 container width='100vw' height='100vh'>
-      <Grid2
-        size={{
-          xs: 12,
-          md: 7,
-          lg: 6
+    <div
+      style={{
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        backgroundImage: `url('${RegisterImageBg}')`,
+        backgroundSize: 'cover',
+        backgroundRepeat: 'repeat'
+      }}
+      className='items-start'
+    >
+      <div
+        className='nes-container bg-yellow-500 max-w-[96%]'
+        style={{
+          textAlign: 'center',
+          width: 600,
+          margin: 'auto',
+          marginTop: '3rem'
         }}
       >
-        <Container component='main' maxWidth='xs'>
-          <Box
-            sx={{
-              marginTop: 8,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center'
-            }}
-          >
-            {!isRegistered ? (
-              <>
-                <Typography component='h1' variant='h5'>
-                  Crear cuenta
-                </Typography>
-                <Box
-                  component='form'
-                  onSubmit={formik.handleSubmit}
-                  sx={{ mt: 3 }}
-                >
-                  <TextField
-                    variant='outlined'
-                    margin='normal'
-                    required
-                    fullWidth
-                    id='username'
-                    label='Nombre de usuario'
-                    name='username'
-                    autoComplete='username'
-                    autoFocus
-                    value={formik.values.username}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={
-                      formik.touched.username && Boolean(formik.errors.username)
-                    }
-                    helperText={
-                      formik.touched.username && formik.errors.username
-                    }
-                  />
-                  <TextField
-                    variant='outlined'
-                    margin='normal'
-                    required
-                    fullWidth
-                    id='email'
-                    label='Correo electrónico'
-                    name='email'
-                    autoComplete='email'
-                    value={formik.values.email}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.email && Boolean(formik.errors.email)}
-                    helperText={formik.touched.email && formik.errors.email}
-                  />
-                  <TextField
-                    variant='outlined'
-                    margin='normal'
-                    required
-                    fullWidth
-                    name='password'
-                    label='Contraseña'
-                    type='password'
-                    id='password'
-                    autoComplete='new-password'
-                    value={formik.values.password}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={
-                      formik.touched.password && Boolean(formik.errors.password)
-                    }
-                    helperText={
-                      formik.touched.password && formik.errors.password
-                    }
-                  />
-                  <TextField
-                    variant='outlined'
-                    margin='normal'
-                    required
-                    fullWidth
-                    name='confirmPassword'
-                    label='Confirmar contraseña'
-                    type='password'
-                    id='confirmPassword'
-                    autoComplete='new-password'
-                    value={formik.values.confirmPassword}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={
-                      formik.touched.confirmPassword &&
-                      Boolean(formik.errors.confirmPassword)
-                    }
-                    helperText={
-                      formik.touched.confirmPassword &&
-                      formik.errors.confirmPassword
-                    }
-                  />
+        {!isRegistered ? (
+          <>
+            <h1 className='nes-text text-white'>Crear cuenta</h1>
+            <form onSubmit={formik.handleSubmit} style={{ marginTop: '2rem' }}>
+              <div className='nes-field'>
+                <label htmlFor='username' className='text-left'>
+                  Nombre de usuario
+                </label>
+                <input
+                  type='text'
+                  id='username'
+                  name='username'
+                  className={`nes-input ${
+                    formik.touched.username && formik.errors.username
+                      ? 'is-error'
+                      : ''
+                  }`}
+                  value={formik.values.username}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                {formik.touched.username && formik.errors.username && (
+                  <span className='nes-text is-error'>
+                    {formik.errors.username}
+                  </span>
+                )}
+              </div>
 
-                  {formik.errors.general && (
-                    <Alert severity='error'>{formik.errors.general}</Alert>
+              <div className='nes-field' style={{ marginTop: '1rem' }}>
+                <label htmlFor='email' className='text-left'>
+                  Correo electrónico
+                </label>
+                <input
+                  type='email'
+                  id='email'
+                  name='email'
+                  className={`nes-input ${
+                    formik.touched.email && formik.errors.email
+                      ? 'is-error'
+                      : ''
+                  }`}
+                  value={formik.values.email}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                {formik.touched.email && formik.errors.email && (
+                  <span className='nes-text is-error'>
+                    {formik.errors.email}
+                  </span>
+                )}
+              </div>
+
+              <div className='nes-field' style={{ marginTop: '1rem' }}>
+                <label htmlFor='password' className='text-left'>
+                  Contraseña
+                </label>
+                <input
+                  type='password'
+                  id='password'
+                  name='password'
+                  className={`nes-input ${
+                    formik.touched.password && formik.errors.password
+                      ? 'is-error'
+                      : ''
+                  }`}
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                {formik.touched.password && formik.errors.password && (
+                  <span className='nes-text is-error'>
+                    {formik.errors.password}
+                  </span>
+                )}
+              </div>
+
+              <div className='nes-field' style={{ marginTop: '1rem' }}>
+                <label htmlFor='confirmPassword' className='text-left'>
+                  Confirmar contraseña
+                </label>
+                <input
+                  type='password'
+                  id='confirmPassword'
+                  name='confirmPassword'
+                  className={`nes-input ${
+                    formik.touched.confirmPassword &&
+                    formik.errors.confirmPassword
+                      ? 'is-error'
+                      : ''
+                  }`}
+                  value={formik.values.confirmPassword}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+                {formik.touched.confirmPassword &&
+                  formik.errors.confirmPassword && (
+                    <span className='nes-text is-error'>
+                      {formik.errors.confirmPassword}
+                    </span>
                   )}
+              </div>
 
-                  <Button
-                    type='submit'
-                    fullWidth
-                    size='large'
-                    variant='contained'
-                    color='primary'
-                    sx={{ mt: 3, mb: 2 }}
-                    disabled={formik.isSubmitting}
-                    loading={formik.isSubmitting}
-                  >
-                    {formik.isSubmitting ? 'Registrando...' : 'Crear cuenta'}
-                  </Button>
-
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant='body2'>
-                      ¿Ya tienes cuenta?{' '}
-                      <Link to='/login' style={{ color: '#1976d2' }}>
-                        Inicia sesión aquí
-                      </Link>
-                    </Typography>
-                  </Box>
-                </Box>
-              </>
-            ) : (
-              <Box sx={{ mt: 3, textAlign: 'center' }}>
-                <Typography variant='h5' gutterBottom>
-                  Registro exitoso
-                </Typography>
-                <Typography variant='body1' sx={{ mb: 3 }}>
-                  Revisa tu correo (y tu carpeta de spam) y haz clic en el
-                  enlace de confirmación para activar tu cuenta.
-                </Typography>
-                <Button
-                  variant='contained'
-                  color='primary'
-                  onClick={() => navigate('/login')}
+              {formik.errors.general && (
+                <div
+                  className='nes-text is-error'
+                  style={{ marginTop: '1rem' }}
                 >
-                  Ir a Iniciar Sesión
-                </Button>
-              </Box>
-            )}
-          </Box>
-        </Container>
-      </Grid2>
-      <Grid2
-        size={{
-          xs: 0,
-          md: 5,
-          lg: 6
-        }}
-      >
-        <img
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover'
-          }}
-          src={RegisterImageBg}
-          alt=''
-        />
-      </Grid2>
-    </Grid2>
+                  {formik.errors.general}
+                </div>
+              )}
+
+              <button
+                type='submit'
+                className={`nes-btn is-primary ${
+                  formik.isSubmitting ? 'is-disabled' : ''
+                }`}
+                style={{ width: '100%', marginTop: '1.5rem' }}
+                disabled={formik.isSubmitting}
+              >
+                {formik.isSubmitting ? 'Registrando...' : 'Crear cuenta'}
+              </button>
+            </form>
+
+            <div style={{ marginTop: '1.5rem' }}>
+              <p className='nes-text'>
+                ¿Ya tienes cuenta?{' '}
+                <Link to='/login' className='nes-text is-primary'>
+                  Inicia sesión aquí
+                </Link>
+              </p>
+            </div>
+          </>
+        ) : (
+          <div style={{ marginTop: '2rem' }}>
+            <h1 className='nes-text is-success'>Registro exitoso</h1>
+            <p className='nes-text'>Revisa tu correo y confirma tu cuenta.</p>
+            <button
+              className='nes-btn is-primary'
+              onClick={() => navigate('/login')}
+            >
+              Ir a Iniciar Sesión
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

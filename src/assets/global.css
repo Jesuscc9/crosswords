@@ -33,11 +33,11 @@
   background-image: url('/src/assets/cloudssprite-compressed.png');
   background-repeat: repeat-x;
   background-size: cover; /* Asegura que el fondo ocupe toda la sección */
-  animation: scrollClouds 80s linear infinite; /* Ajusta la duración y el efecto de suavizado */
+  animation: scrollClouds 120s linear infinite; /* Ajusta la duración y el efecto de suavizado */
 }
 
 .clouds.backwards {
   top: 100px;
-  animation: scrollCloudsBackwards 80s linear infinite;
+  animation: scrollCloudsBackwards 120s linear infinite;
   background-image: url('/src/assets/cloudsbackwards.png');
 }
