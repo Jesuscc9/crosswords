@@ -10,6 +10,7 @@ import MailConfirmation from './pages/MailConfirmation'
 import { NewCrossword } from './pages/NewCrossword'
 import { AppLayout } from './components/AppLayout'
 import CrosswordPage from './pages/CrosswordPage'
+import { MenuPage } from './pages/MenuPage'
 
 export const router = createBrowserRouter([
   {
@@ -37,7 +38,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: 'crosswords',
-        element: <CrosswordsListPage />
+        element: <MenuPage />
       },
       {
         path: 'crosswords/:id',

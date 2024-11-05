@@ -101,7 +101,13 @@ export const Navbar = () => {
   )
 
   return (
-    <AppBar position='static' elevation={0}>
+    <AppBar
+      position='static'
+      elevation={1}
+      sx={{
+        zIndex: 1
+      }}
+    >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
         <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
           <IconButton

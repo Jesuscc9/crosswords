@@ -6,3 +6,38 @@
   box-sizing: border-box;
   margin: 0;
 }
+
+@keyframes scrollClouds {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes scrollCloudsBackwards {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
+}
+
+.clouds {
+  z-index: 0;
+  width: 100vw;
+  position: absolute;
+  height: 200px;
+  background-image: url('/src/assets/cloudssprite-compressed.png');
+  background-repeat: repeat-x;
+  background-size: cover; /* Asegura que el fondo ocupe toda la sección */
+  animation: scrollClouds 80s linear infinite; /* Ajusta la duración y el efecto de suavizado */
+}
+
+.clouds.backwards {
+  top: 100px;
+  animation: scrollCloudsBackwards 80s linear infinite;
+  background-image: url('/src/assets/cloudsbackwards.png');
+}
