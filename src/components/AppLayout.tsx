@@ -1,5 +1,6 @@
 import { Box, Grid2 } from '@mui/material'
 import { Navbar } from './Navbar'
+import AppBg from '../assets/appbg.png'
 
 export const AppLayout = ({ children }) => {
   return (
@@ -7,7 +8,7 @@ export const AppLayout = ({ children }) => {
       container
       direction={'column'}
       sx={{
-        backgroundImage: `url('/src/assets/appbg.png')`,
+        backgroundImage: `url('${AppBg}')`,
         backgroundSize: 'cover',
         height: '100vh',
         width: '100vw'
