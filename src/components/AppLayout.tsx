@@ -7,7 +7,7 @@ export const AppLayout = ({ children }) => {
       container
       direction={'column'}
       sx={{
-        backgroundImage: 'url(/src/assets/appbg.png)',
+        backgroundImage: `url('/src/assets/appbg.png')`,
         backgroundSize: 'cover',
         height: '100vh',
         width: '100vw'
