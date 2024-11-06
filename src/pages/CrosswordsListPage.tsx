@@ -18,39 +18,26 @@ import {
 } from '@mui/material'
 import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase'
+import useLocalStorage from '../hooks/useLocalStorage'
 
-// Hook personalizado para gestionar localStorage
-function useLocalStorage(key, initialValue) {
-  const [storedValue, setStoredValue] = useState(() => {
-    try {
-      const item = window.localStorage.getItem(key)
-      return item ? JSON.parse(item) : initialValue
-    } catch (error) {
-      console.error(error)
-      return initialValue
-    }
-  })
-
-  const setValue = (value) => {
-    try {
-      setStoredValue(value)
-      window.localStorage.setItem(key, JSON.stringify(value))
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
-  return [storedValue, setValue]
+interface iProps {
+  topic: 'SCRUM' | 'PMBOOK'
 }
 
-export default function CrosswordsListPage() {
+export default function CrosswordsListPage({ topic }: iProps) {
   const [crosswords, setCrosswords] = useState([])
-  const [showWelcome, setShowWelcome] = useLocalStorage('showWelcome', true)
+  const [showWelcome, setShowWelcome] = useLocalStorage<boolean>(
+    'showWelcome',
+    true
+  )
 
   useEffect(() => {
     // Función para cargar los crucigramas de la base de datos
     const fetchCrosswords = async () => {
-      const { data, error } = await supabase.from('crosswords').select('*')
+      const { data, error } = await supabase
+        .from('crosswords')
+        .select('*')
+        .eq('topic', topic)
       if (error) {
         console.error('Error al cargar los crucigramas:', error)
       } else {

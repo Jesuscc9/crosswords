@@ -25,7 +25,7 @@ export const AppLayout = ({ children }) => {
         <div className='clouds backwards'></div>
       </Box>
       <br />
-      <Grid2 size={12} pt={2}>
+      <Grid2 size={12} pt={14}>
         {children}
       </Grid2>
     </Grid2>

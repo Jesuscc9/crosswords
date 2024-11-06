@@ -1,10 +1,11 @@
 import React from 'react'
 import 'nes.css/css/nes.min.css'
 import { Box } from '@mui/material'
+import { Link } from 'react-router-dom'
 
 export const MenuPage: React.FC = () => {
   return (
-    <Box p={2} mt={10} width={900} maxWidth='90%' mx='auto'>
+    <Box p={2} width={900} maxWidth='90%' mx='auto'>
       <section className=''>
         <section className='message-list'>
           <Box
@@ -26,18 +27,11 @@ export const MenuPage: React.FC = () => {
         </section>
       </section>
 
-      <div
-        style={{
-          display: 'flex',
-          gap: '2rem',
-          marginTop: '4rem',
-          justifyContent: 'center',
-          flexDirection: 'row'
-        }}
-      >
-        <button
-          className='nes-btn is-primary'
-          style={{ padding: '2rem', fontSize: '1.5rem', width: '100%' }}
+      <div className='flex w-full py-4 mt-8 md:mt-16 justify-between gap-8 flex-col md:flex-row'>
+        <Link
+          to='scrum'
+          className='nes-btn is-primary !p-4 !md:p-8 w-full'
+          style={{ fontSize: '1.5rem' }}
         >
           SCRUM
           <br />
@@ -55,10 +49,12 @@ export const MenuPage: React.FC = () => {
               30%
             </p>
           </Box>
-        </button>
-        <button
-          className='nes-btn is-warning'
-          style={{ padding: '2rem', fontSize: '1.5rem', width: '100%' }}
+        </Link>
+
+        <Link
+          to='pmbok'
+          className='nes-btn is-warning w-full !p-4 md:!p-8'
+          style={{ fontSize: '1.5rem' }}
         >
           PMBOK
           <br />
@@ -73,7 +69,7 @@ export const MenuPage: React.FC = () => {
               90%
             </p>
           </Box>
-        </button>
+        </Link>
       </div>
     </Box>
   )

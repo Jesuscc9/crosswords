@@ -11,6 +11,7 @@ import { NewCrossword } from './pages/NewCrossword'
 import { AppLayout } from './components/AppLayout'
 import CrosswordPage from './pages/CrosswordPage'
 import { MenuPage } from './pages/MenuPage'
+import CrosswordsLevelsMenu from './pages/CrosswordsLevelMenu'
 
 export const router = createBrowserRouter([
   {
@@ -31,7 +32,6 @@ export const router = createBrowserRouter([
           <AppLayout>
             <Outlet />
           </AppLayout>
-          {/* render nested route */}
         </ProtectedRoute>
       </SessionProvider>
     ),
@@ -47,6 +47,14 @@ export const router = createBrowserRouter([
       {
         path: 'crosswords/new',
         element: <NewCrossword />
+      },
+      {
+        path: 'crosswords/scrum',
+        element: <CrosswordsLevelsMenu topic='SCRUM' difficulty='EASY' />
+      },
+      {
+        path: 'crosswords/pmbok',
+        element: <CrosswordsLevelsMenu topic='PMBOK' difficulty='EASY' />
       }
     ]
   },

@@ -6,12 +6,19 @@ import * as Yup from 'yup'
 import RegisterImageBg from '../assets/loginbg.avif'
 import 'nes.css/css/nes.min.css'
 
+interface iSignupForm {
+  username: string
+  email: string
+  password: string
+  confirmPassword: string
+}
+
 export default function Register() {
   const navigate = useNavigate()
   const [isRegistered, setIsRegistered] = useState(false)
 
   // Validaciones con Yup
-  const validationSchema = Yup.object({
+  const validationSchema = Yup.object<iSignupForm>({
     username: Yup.string().required('El nombre de usuario es requerido'),
     email: Yup.string()
       .email('Correo electrónico no válido')
@@ -25,7 +32,7 @@ export default function Register() {
   })
 
   // Formik Hook
-  const formik = useFormik({
+  const formik = useFormik<iSignupForm>({
     initialValues: {
       username: '',
       email: '',
