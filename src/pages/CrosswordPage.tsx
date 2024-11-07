@@ -13,33 +13,12 @@ import {
 } from '@mui/material'
 import { supabase } from '../services/supabase'
 import Crossword from '@jaredreisinger/react-crossword'
-
-// Hook personalizado para gestionar localStorage
-function useLocalStorage(key, initialValue) {
-  const [storedValue, setStoredValue] = useState(() => {
-    try {
-      const item = window.localStorage.getItem(key)
-      return item ? JSON.parse(item) : initialValue
-    } catch (error) {
-      console.error(error)
-      return initialValue
-    }
-  })
-
-  const setValue = (value) => {
-    try {
-      setStoredValue(value)
-      window.localStorage.setItem(key, JSON.stringify(value))
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
-  return [storedValue, setValue]
-}
+import useLocalStorage from '../hooks/useLocalStorage'
+import useSession from '../hooks/useSession'
+import { theme } from '../components/Theme'
 
 export default function CrosswordPage() {
-  const { id } = useParams() // Obtener el id de la URL
+  const { crosswordId, crosswordTopic, crosswordDifficulty } = useParams() // Obtener el id de la URL
   const navigate = useNavigate() // Hook para navegar entre páginas
   const [crosswordData, setCrosswordData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -47,15 +26,31 @@ export default function CrosswordPage() {
     'showInstructions',
     true
   )
+  const [isFetchingLastProgress, setIsFetchingLastProgress] = useState(false)
+  const [prevProgressId, setPrevProgressId] = useState<number | undefined>(
+    undefined
+  )
+
+  const { session } = useSession()
+
+  const [showNotFoundRoute, setShowNotFoundRoute] = useState(false)
+
   const [instructionsOpen, setInstructionsOpen] = useState(false)
 
   useEffect(() => {
+    if (!crosswordTopic || !crosswordDifficulty || !crosswordId) {
+      setShowNotFoundRoute(true)
+      return
+    }
+
     // Función para cargar el crucigrama específico de la base de datos
     const fetchCrossword = async () => {
       const { data, error } = await supabase
         .from('crosswords')
         .select('*')
-        .eq('id', id)
+        .eq('id', crosswordId)
+        .eq('topic', crosswordTopic?.toUpperCase())
+        .eq('difficulty', crosswordDifficulty?.toUpperCase())
         .single()
 
       if (error) {
@@ -68,7 +63,81 @@ export default function CrosswordPage() {
     }
 
     fetchCrossword()
-  }, [id])
+  }, [crosswordId, crosswordDifficulty, crosswordTopic])
+
+  useEffect(() => {
+    if (!session) return
+
+    setIsFetchingLastProgress(true)
+
+    const fetchLastProgress = async () => {
+      const { data, error } = await supabase
+        .from('user_progress')
+        .select('*')
+        .eq('crossword_id', Number(crosswordId))
+        .eq('profile_id', session?.user.id)
+        .limit(1)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error al cargar el progreso del crucigrama:', error)
+      } else {
+        console.log('prev')
+
+        if (data.length > 0) {
+          const prevProgress = data[0].current_answers as string
+          setPrevProgressId(data[0].id)
+
+          console.log({ prevProgress })
+
+          window.localStorage.setItem(
+            `crossword-${crosswordId}`,
+            JSON.parse(prevProgress)
+          )
+        }
+
+        console.log(data)
+      }
+
+      setIsFetchingLastProgress(false)
+    }
+
+    fetchLastProgress()
+  }, [crosswordId, session])
+
+  const handleUpdateCrosswordProgress = async () => {
+    if (!session) return
+
+    console.log('hola')
+    // Actualizar el progreso del crucigrama
+    console.log('Progreso actualizado')
+
+    const data = window.localStorage.getItem(`crossword-${crosswordId}`)
+
+    const { data: updated } = await supabase
+      .from('user_progress')
+      .upsert(
+        {
+          id: prevProgressId ?? undefined,
+          crossword_id: Number(crosswordId),
+          profile_id: session?.user.id,
+          current_answers: JSON.stringify(data)
+        },
+        {
+          onConflict: 'id'
+        }
+      )
+      .select()
+
+    console.log({ updated })
+
+    if (updated?.length > 0) {
+      window.localStorage.setItem(
+        `crossword-${crosswordId}`,
+        JSON.parse(updated[0]?.current_answers)
+      )
+    }
+  }
 
   // Manejar el cierre del diálogo de instrucciones
   const handleCloseInstructions = () => {
@@ -97,40 +166,64 @@ export default function CrosswordPage() {
   }
 
   return (
-    <Container component='main' maxWidth='md'>
+    <Container
+      className='nes-container is-dark !mx-auto max-w-[96%] !mb-20'
+      component='main'
+    >
       <Box
         sx={{
-          marginTop: 8,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center'
         }}
       >
-        {crosswordData ? (
+        {crosswordData || !isFetchingLastProgress ? (
           <>
             <Typography component='h1' variant='h5' gutterBottom>
               {crosswordData.title}
             </Typography>
-            <Typography variant='body1' color='textSecondary' gutterBottom>
+            <Typography variant='body1' color='yellow' gutterBottom>
               {crosswordData.description}
             </Typography>
-            <Box sx={{ width: '100%', mt: 4 }}>
+            <Box
+              display='flex'
+              sx={{
+                width: '100%',
+                mt: 4,
+                [theme.breakpoints.down('md')]: {
+                  flexDirection: 'column'
+                }
+              }}
+            >
               <Crossword
                 data={crosswordData.data}
+                useStorage
+                storageKey={`crossword-${crosswordId}`}
                 acrossLabel='Horizontal'
                 downLabel='Vertical'
+                onCellChange={handleUpdateCrosswordProgress}
+                theme={{
+                  highlightBackground: 'orange'
+                }}
               />
             </Box>
-            <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
-              <Button
-                variant='contained'
-                onClick={() => navigate('/crosswords')}
+            <Box sx={{ mt: 4, display: 'flex', gap: 2 }} flexWrap='wrap'>
+              <button
+                className='nes-btn is-warning'
+                onClick={() =>
+                  navigate(
+                    `/app/crosswords/${crosswordTopic}/${crosswordDifficulty}/levels`
+                  )
+                }
               >
                 Volver a la Lista de Crucigramas
-              </Button>
-              <Button variant='outlined' onClick={handleOpenInstructions}>
+              </button>
+              <button
+                className='nes-btn is-primary'
+                onClick={handleOpenInstructions}
+              >
                 Ver Instrucciones
-              </Button>
+              </button>
             </Box>
           </>
         ) : (
@@ -154,9 +247,26 @@ export default function CrosswordPage() {
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCloseInstructions} color='primary'>
+            <button
+              className='nes-btn is-primary'
+              onClick={handleCloseInstructions}
+              color='primary'
+            >
               Entendido
-            </Button>
+            </button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Diálogo de Ruta no encontrada */}
+        <Dialog open={showNotFoundRoute}>
+          <DialogTitle>Error</DialogTitle>
+          <DialogContent>
+            <Typography variant='body1'>
+              No se encontró la ruta solicitada.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => navigate('/crosswords')}>Volver</Button>
           </DialogActions>
         </Dialog>
       </Box>

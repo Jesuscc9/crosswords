@@ -18,6 +18,7 @@ import MuiAppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
 import styled from '@mui/material/styles/styled'
 import { KeyboardArrowDown } from '@mui/icons-material'
+import useProfile from '../hooks/useProfile'
 
 const AppBar = styled(MuiAppBar)(({ theme }) => ({
   opacity: 0.9,
@@ -41,11 +42,10 @@ const pages = [
 ]
 
 export const Navbar = () => {
-  const { signOut } = useSession()
+  const { signOut, userRole } = useSession()
+  const { profile } = useProfile()
 
   // const session = supabase.auth.getSession()
-
-  const { userRole } = useSession()
 
   const [anchorElNav, setAnchorElNav] = useState(null)
   const [anchorElUser, setAnchorElUser] = useState(null)
@@ -247,6 +247,7 @@ export const Navbar = () => {
                   </span>
                 </Typography>
               ) : null} */}
+              {profile?.username}
               <AccountCircle className='ml-3' />
             </Button>
           </Tooltip>

@@ -7,8 +7,10 @@ import {
   DialogContent,
   DialogActions
 } from '@mui/material'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../services/supabase'
+import { theme } from '../components/Theme'
+import useSession from '../hooks/useSession'
 
 type Difficulty = 'EASY' | 'MEDIUM' | 'HARD'
 type Topic = 'SCRUM' | 'PMBOK'
@@ -19,34 +21,36 @@ const LEVELS_LABELS = {
   HARD: 'Difícil'
 }
 
-interface CrosswordsLevelsProps {
-  difficulty: Difficulty // EASY, MEDIUM, HARD
-  topic: Topic // SCRUM, PMBOK
-}
-
 const difficulties: Difficulty[] = ['EASY', 'MEDIUM', 'HARD']
 
-const CrosswordsLevelsMenu: React.FC<CrosswordsLevelsProps> = ({
-  difficulty,
-  topic
-}) => {
+const CrosswordsLevelsMenu: React.FC = () => {
+  const { crosswordTopic, crosswordDifficulty } = useParams()
+  const { session } = useSession()
+
+  console.log({ crosswordTopic, crosswordDifficulty })
+
   const [levels, setLevels] = useState<number[]>([])
   const [completedLevels, setCompletedLevels] = useState<number[]>([])
   const [showLockedDialog, setShowLockedDialog] = useState(false)
-  const [currentDifficulty, setCurrentDifficulty] = useState(difficulty)
+  const [currentDifficulty, setCurrentDifficulty] = useState(
+    crosswordDifficulty?.toUpperCase() as Difficulty
+  )
+  const [tutorialCompleted, setTutorialCompleted] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
+    if (!session) return
+
     const fetchLevels = async () => {
       const { data, error } = await supabase
         .from('crosswords')
         .select('*')
-        .eq('difficulty', currentDifficulty)
-        .eq('topic', topic)
+        .eq('difficulty', currentDifficulty.toUpperCase())
+        .eq('topic', crosswordTopic?.toUpperCase())
 
       if (error) console.error('Error fetching levels:', error)
       else {
-        setLevels(data.map((level: any) => level.id))
+        setLevels(data)
         setCompletedLevels(
           data
             .filter((level: any) => level.is_completed)
@@ -55,8 +59,25 @@ const CrosswordsLevelsMenu: React.FC<CrosswordsLevelsProps> = ({
       }
     }
 
+    const fetchTutorial = async () => {
+      const { data, error } = await supabase
+        .from('learning_progress')
+        .select('*')
+        .eq('difficulty', currentDifficulty.toUpperCase())
+        .eq('topic', crosswordTopic?.toUpperCase())
+        .eq('profile_id', session?.user.id)
+        .limit(1)
+
+      if (error) console.error('Error fetching tutorial:', error)
+      else {
+        console.log({ data })
+        setTutorialCompleted(data.length > 0)
+      }
+    }
+
     fetchLevels()
-  }, [currentDifficulty, topic])
+    fetchTutorial()
+  }, [currentDifficulty, crosswordTopic, session])
 
   // const handleLevelClick = (level: number) => {
   //   if (
@@ -70,8 +91,18 @@ const CrosswordsLevelsMenu: React.FC<CrosswordsLevelsProps> = ({
   //   }
   // }
 
-  const handleLevelClick = (crosswordId: number) => {
-    navigate(`/${crosswordId}`)
+  const handleLevelClick = (crosswordId?: number) => {
+    if (!crosswordId) {
+      navigate('tutorial')
+      return
+    }
+
+    if (!tutorialCompleted) {
+      setShowLockedDialog(true)
+      return
+    }
+
+    navigate(`${crosswordId}`)
   }
 
   const changeDifficulty = (direction: 'prev' | 'next') => {
@@ -85,42 +116,50 @@ const CrosswordsLevelsMenu: React.FC<CrosswordsLevelsProps> = ({
   return (
     <>
       <Box
-        className='nes-container is-rounded !mt-10 w-[1200px] !mx-auto max-w-full'
-        sx={{ padding: 3, textAlign: 'center', backgroundColor: '#f8e6d4' }}
+        className='nes-container !px-4 md:!px-16 !py-8 is-rounded !mt-10 w-[1200px] !mx-auto max-w-[96%]'
+        sx={{ textAlign: 'center', backgroundColor: '#f8e6d4' }}
       >
-        <Typography variant='h4' className='nes-text is-primary' gutterBottom>
-          Crucigramas de {topic}
+        <Typography variant='h4' className='nes-text' gutterBottom>
+          Crucigramas de {crosswordTopic?.toUpperCase()}
         </Typography>
 
-        <Typography variant='h6' className='nes-text is-warning' sx={{ my: 3 }}>
+        <Typography variant='h6' className='nes-text is-error' sx={{ my: 3 }}>
           Nivel: {LEVELS_LABELS[currentDifficulty]}
         </Typography>
 
         <Box
           display='grid'
-          gridTemplateColumns='repeat(5, 1fr)'
           gap={2}
-          sx={{ mt: 3 }}
+          sx={{
+            mt: 3,
+            gridTemplateColumns: 'repeat(5, 1fr)',
+            [theme.breakpoints.down('md')]: {
+              gridTemplateColumns: 'repeat(1, 1fr)'
+            }
+          }}
         >
-          {/* Tutorial Level */}
           <Box
             className='nes-btn is-primary'
-            onClick={() => handleLevelClick(0)}
             sx={{
               padding: 2,
               borderRadius: '8px',
               display: 'flex',
               flexDirection: 'column',
+              justifyContent: 'space-between',
               alignItems: 'center',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              height: '120px'
             }}
+            onClick={() => handleLevelClick()}
           >
-            <Typography variant='h6' color='textPrimary'>
+            <Typography variant='h6' color='white'>
               Tutorial
             </Typography>
             <Box display='flex'>
               <i
-                className='nes-icon trophy'
+                className={`nes-icon trophy ${
+                  !tutorialCompleted && 'is-empty'
+                }`}
                 style={{ fontSize: '1.5rem', color: '#FFD700' }}
               />
             </Box>
@@ -136,30 +175,30 @@ const CrosswordsLevelsMenu: React.FC<CrosswordsLevelsProps> = ({
 
             return (
               <Box
-                key={level}
-                className={`nes-btn ${
-                  isUnlocked ? 'is-primary' : 'is-disabled'
+                key={level.id}
+                className={`nes-btn is-primary ${
+                  !tutorialCompleted && 'is-disabled'
                 }`}
-                onClick={() => handleLevelClick(level)}
+                onClick={() => handleLevelClick(level?.id)}
                 sx={{
                   padding: 2,
                   borderRadius: '8px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  cursor: isUnlocked ? 'pointer' : 'default'
+                  cursor: isUnlocked ? 'pointer' : 'default',
+                  height: '120px',
+                  justifyContent: 'space-between'
                 }}
               >
-                <Typography variant='h6' color='textPrimary'>
-                  {level}
+                <Typography variant='h6' color='white' gutterBottom>
+                  {index + 1}
                 </Typography>
                 <Box display='flex'>
                   {[...Array(3)].map((_, starIndex) => (
                     <i
                       key={starIndex}
-                      className={`nes-icon ${
-                        isCompleted && starIndex < 3 ? 'is-star' : 'is-empty'
-                      }`}
+                      className='nes-icon is-empty star'
                       style={{
                         fontSize: '1.5rem',
                         color: isCompleted ? '#FFD700' : '#CCCCCC'
@@ -179,72 +218,57 @@ const CrosswordsLevelsMenu: React.FC<CrosswordsLevelsProps> = ({
         >
           <DialogContent>
             <Typography variant='body1'>
-              Este nivel está bloqueado. Completa el nivel anterior para
+              Este nivel está bloqueado. Completa el tutorial para
               desbloquearlo.
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button
+            <button
+              className='nes-btn'
               onClick={() => setShowLockedDialog(false)}
-              color='primary'
               autoFocus
             >
               Entendido
-            </Button>
+            </button>
           </DialogActions>
         </Dialog>
 
         {/* Difficulty Change Buttons */}
         <Box display='flex' justifyContent='space-between' sx={{ mt: 4 }}>
-          <Button
-            variant='contained'
-            color='secondary'
-            className='nes-btn is-warning'
+          <button
+            className={`nes-btn is-warning ${
+              difficulties.indexOf(currentDifficulty) === 0 ? 'is-disabled' : ''
+            }`}
             onClick={() => changeDifficulty('prev')}
-            sx={{
-              fontWeight: 'bold',
-              borderRadius: 5,
-              padding: '0.5rem 1.5rem'
-            }}
             disabled={difficulties.indexOf(currentDifficulty) === 0}
           >
             Nivel Anterior
-          </Button>
-          <Button
-            variant='contained'
-            color='primary'
-            className='nes-btn is-success'
+          </button>
+          <button
+            className={`nes-btn is-success ${
+              difficulties.indexOf(currentDifficulty) === -1
+                ? 'is-disabled'
+                : ''
+            }`}
             onClick={() => changeDifficulty('next')}
-            sx={{
-              fontWeight: 'bold',
-              borderRadius: 5,
-              padding: '0.5rem 1.5rem'
-            }}
             disabled={
               difficulties.indexOf(currentDifficulty) ===
               difficulties.length - 1
             }
           >
             Siguiente Nivel
-          </Button>
+          </button>
         </Box>
 
         {/* Button to go back to main menu */}
       </Box>
       <Box display='flex' justifyContent='center' sx={{ mt: 4 }}>
-        <Button
-          variant='contained'
-          color='info'
+        <button
           className='nes-btn is-primary'
           onClick={() => navigate('/app/crosswords')}
-          sx={{
-            fontWeight: 'bold',
-            borderRadius: 5,
-            padding: '0.5rem 2rem'
-          }}
         >
           Volver al Inicio
-        </Button>
+        </button>
       </Box>
     </>
   )

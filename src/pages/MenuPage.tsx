@@ -29,18 +29,17 @@ export const MenuPage: React.FC = () => {
 
       <div className='flex w-full py-4 mt-8 md:mt-16 justify-between gap-8 flex-col md:flex-row'>
         <Link
-          to='scrum'
+          to='scrum/easy/levels'
           className='nes-btn is-primary !p-4 !md:p-8 w-full'
           style={{ fontSize: '1.5rem' }}
         >
           SCRUM
-          <br />
-          <br />
-          {/* <div>
-            <img src={ScrumIcon} width={50} height={50} />
-          </div> */}
-          <Box display='flex' alignItems='center' gap={2}>
-            <progress className='nes-progress' value='30' max='100'></progress>
+          <Box mt={4} display='flex' alignItems='center' gap={2}>
+            <progress
+              className='nes-progress !h-[30px] md:!h-[48px]'
+              value='30'
+              max='100'
+            ></progress>
             <p
               style={{
                 margin: 0
@@ -52,15 +51,17 @@ export const MenuPage: React.FC = () => {
         </Link>
 
         <Link
-          to='pmbok'
+          to='pmbok/easy/levels'
           className='nes-btn is-warning w-full !p-4 md:!p-8'
           style={{ fontSize: '1.5rem' }}
         >
           PMBOK
-          <br />
-          <br />
-          <Box display='flex' alignItems='center' gap={2}>
-            <progress className='nes-progress' value='90' max='100'></progress>
+          <Box mt={4} display='flex' alignItems='center' gap={2}>
+            <progress
+              className='nes-progress !h-[30px] md:!h-[48px]'
+              value='90'
+              max='100'
+            ></progress>
             <p
               style={{
                 margin: 0

@@ -12,6 +12,9 @@ import { AppLayout } from './components/AppLayout'
 import CrosswordPage from './pages/CrosswordPage'
 import { MenuPage } from './pages/MenuPage'
 import CrosswordsLevelsMenu from './pages/CrosswordsLevelMenu'
+import LearningTopicPage from './pages/LearningTopicPage'
+import { supabase } from './services/supabase'
+import ProfileProvider from './context/ProfileContext/ProfileProvider'
 
 export const router = createBrowserRouter([
   {
@@ -28,11 +31,13 @@ export const router = createBrowserRouter([
     path: '/app',
     element: (
       <SessionProvider>
-        <ProtectedRoute>
-          <AppLayout>
-            <Outlet />
-          </AppLayout>
-        </ProtectedRoute>
+        <ProfileProvider>
+          <ProtectedRoute>
+            <AppLayout>
+              <Outlet />
+            </AppLayout>
+          </ProtectedRoute>
+        </ProfileProvider>
       </SessionProvider>
     ),
     children: [
@@ -49,12 +54,16 @@ export const router = createBrowserRouter([
         element: <NewCrossword />
       },
       {
-        path: 'crosswords/scrum',
-        element: <CrosswordsLevelsMenu topic='SCRUM' difficulty='EASY' />
+        path: 'crosswords/:crosswordTopic/:crosswordDifficulty/levels',
+        element: <CrosswordsLevelsMenu />
       },
       {
-        path: 'crosswords/pmbok',
-        element: <CrosswordsLevelsMenu topic='PMBOK' difficulty='EASY' />
+        path: 'crosswords/:crosswordTopic/:crosswordDifficulty/levels/tutorial',
+        element: <LearningTopicPage />
+      },
+      {
+        path: 'crosswords/:crosswordTopic/:crosswordDifficulty/levels/:crosswordId',
+        element: <CrosswordPage />
       }
     ]
   },
@@ -63,7 +72,7 @@ export const router = createBrowserRouter([
     element: <MailConfirmation />
   },
   {
-    path: '*',
+    path: '/',
     element: (
       <SessionProvider>
         <PublicRoute>

@@ -1,8 +1,9 @@
 import { Box, Grid2 } from '@mui/material'
 import { Navbar } from './Navbar'
 import AppBg from '../assets/appbg.png'
+import React from 'react'
 
-export const AppLayout = ({ children }) => {
+export const AppLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <Grid2
       container
@@ -17,15 +18,15 @@ export const AppLayout = ({ children }) => {
         overflow: 'auto'
       }}
     >
-      <Grid2 size={12} zIndex={1} position='fixed'>
+      <Grid2 size={12} zIndex={2} position='fixed'>
         <Navbar></Navbar>
       </Grid2>
-      <Box position='absolute'>
+      <Box position='absolute' zIndex={0}>
         <div className='clouds'></div>
         <div className='clouds backwards'></div>
       </Box>
       <br />
-      <Grid2 size={12} pt={14}>
+      <Grid2 size={12} pt={14} zIndex={1}>
         {children}
       </Grid2>
     </Grid2>
