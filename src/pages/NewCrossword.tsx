@@ -6,35 +6,62 @@ import {
   Container,
   Alert,
   MenuItem,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Radio,
+  RadioGroup,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  IconButton
 } from '@mui/material'
-import Grid from '@mui/material/Grid'
 import Button from '@mui/lab/LoadingButton'
 import { useNavigate } from 'react-router-dom'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { supabase } from '../services/supabase'
-import { Add, Remove } from '@mui/icons-material'
 import Crossword from '@jaredreisinger/react-crossword'
+import { Add, Remove } from '@mui/icons-material'
 
-export const NewCrossword = () => {
+// Tipos para las pistas y datos del crucigrama
+interface Clue {
+  clue: string
+  answer: string
+  row: number
+  col: number
+}
+
+interface CrosswordData {
+  across: Record<number, Clue>
+  down: Record<number, Clue>
+}
+
+// Tipos para los valores del formulario
+interface FormValues {
+  title: string
+  description: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  time_limit: string
+  topic: 'SCRUM' | 'PMBOK'
+}
+
+export const NewCrossword: React.FC = () => {
   const navigate = useNavigate()
 
   // Estado para almacenar las pistas horizontales y verticales
-  const [acrossClues, setAcrossClues] = useState([
-    { clue: '', answer: '', row: '', col: '' }
+  const [acrossClues, setAcrossClues] = useState<Clue[]>([
+    { clue: '', answer: '', row: 0, col: 0 }
   ])
-  const [downClues, setDownClues] = useState([
-    { clue: '', answer: '', row: '', col: '' }
+  const [downClues, setDownClues] = useState<Clue[]>([
+    { clue: '', answer: '', row: 0, col: 0 }
   ])
 
-  // Estado para controlar el diálogo de previsualización
+  // Estado para control de diálogo y envío
   const [previewOpen, setPreviewOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [generalError, setGeneralError] = useState<string | null>(null)
 
   // Validación con Yup
   const validationSchema = Yup.object({
@@ -43,19 +70,22 @@ export const NewCrossword = () => {
     difficulty: Yup.string()
       .oneOf(['easy', 'medium', 'hard'], 'Selecciona una dificultad válida')
       .required('La dificultad es requerida'),
-    time_limit: Yup.number()
-      .positive('El tiempo límite debe ser positivo')
-      .integer('Debe ser un número entero')
-      .required('El tiempo límite es requerido')
+    time_limit: Yup.string()
+      .matches(/^\d{2}:\d{2}:\d{2}$/, 'Formato de tiempo inválido (HH:MM:SS)')
+      .required('El tiempo límite es requerido'),
+    topic: Yup.string()
+      .oneOf(['SCRUM', 'PMBOK'], 'Selecciona un tema válido')
+      .required('El tema es requerido')
   })
 
   // Formik Hook
-  const formik = useFormik({
+  const formik = useFormik<FormValues>({
     initialValues: {
       title: '',
       description: '',
-      difficulty: '',
-      time_limit: ''
+      difficulty: 'easy',
+      time_limit: '00:00:00',
+      topic: 'SCRUM'
     },
     validationSchema: validationSchema,
     onSubmit: () => {
@@ -66,18 +96,18 @@ export const NewCrossword = () => {
   // Maneja el envío definitivo al confirmar en el diálogo
   const handleConfirmSubmit = async () => {
     setIsSubmitting(true)
-    const { title, description, difficulty, time_limit } = formik.values
+    const { title, description, difficulty, time_limit, topic } = formik.values
 
     // Formatear las pistas en el formato adecuado para el componente Crossword
-    const formattedData = {
+    const formattedData: CrosswordData = {
       across: Object.fromEntries(
         acrossClues.map((clue, index) => [
           index + 1,
           {
             clue: clue.clue,
             answer: clue.answer.toUpperCase(),
-            row: parseInt(clue.row, 10),
-            col: parseInt(clue.col, 10)
+            row: clue.row,
+            col: clue.col
           }
         ])
       ),
@@ -87,8 +117,8 @@ export const NewCrossword = () => {
           {
             clue: clue.clue,
             answer: clue.answer.toUpperCase(),
-            row: parseInt(clue.row, 10),
-            col: parseInt(clue.col, 10)
+            row: clue.row,
+            col: clue.col
           }
         ])
       )
@@ -99,49 +129,68 @@ export const NewCrossword = () => {
         {
           title,
           description,
-          difficulty,
-          time_limit: `${time_limit} minutes`,
+          difficulty: difficulty.toUpperCase(),
+          time_limit,
+          topic: topic.toUpperCase(),
           data: formattedData
         }
       ])
 
       if (error) {
-        formik.setFieldError('general', error.message)
+        setGeneralError(error.message)
       } else {
-        navigate('/crosswords', { replace: true })
+        setGeneralError(null)
+        navigate('/app/crosswords', { replace: true })
       }
     } catch (error) {
       console.error(error)
-      formik.setFieldError('general', 'Error inesperado')
+      setGeneralError('Error inesperado')
     }
 
     setIsSubmitting(false)
     setPreviewOpen(false) // Cierra el diálogo después de enviar
   }
 
-  const handleAddClue = (type) => {
-    const newClue = { clue: '', answer: '', row: '', col: '' }
+  const handleAddClue = (type: 'across' | 'down') => {
+    const newClue: Clue = { clue: '', answer: '', row: 0, col: 0 }
     type === 'across'
       ? setAcrossClues([...acrossClues, newClue])
       : setDownClues([...downClues, newClue])
   }
 
-  const handleRemoveClue = (type, index) => {
+  const handleRemoveClue = (type: 'across' | 'down', index: number) => {
     type === 'across'
       ? setAcrossClues(acrossClues.filter((_, i) => i !== index))
       : setDownClues(downClues.filter((_, i) => i !== index))
   }
 
-  const handleClueChange = (type, index, field, value) => {
-    const updateClues = (clues) =>
-      clues.map((clue, i) => (i === index ? { ...clue, [field]: value } : clue))
+  const handleClueChange = (
+    type: 'across' | 'down',
+    index: number,
+    field: keyof Clue,
+    value: string
+  ) => {
+    const updateClues = (clues: Clue[]) =>
+      clues.map((clue, i) =>
+        i === index
+          ? {
+              ...clue,
+              [field]:
+                field === 'row' || field === 'col' ? parseInt(value, 10) : value
+            }
+          : clue
+      )
     type === 'across'
       ? setAcrossClues(updateClues(acrossClues))
       : setDownClues(updateClues(downClues))
   }
 
   return (
-    <Container component='main' maxWidth='md'>
+    <Container
+      component='main'
+      maxWidth='md'
+      className='nes-container is-white bg-white'
+    >
       <Box
         sx={{
           marginTop: 8,
@@ -211,9 +260,9 @@ export const NewCrossword = () => {
           <TextField
             fullWidth
             id='time_limit'
-            label='Tiempo Límite (minutos)'
+            label='Tiempo Límite (HH:MM:SS)'
             name='time_limit'
-            type='number'
+            type='text'
             value={formik.values.time_limit}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
@@ -223,63 +272,84 @@ export const NewCrossword = () => {
             helperText={formik.touched.time_limit && formik.errors.time_limit}
             margin='normal'
             variant='outlined'
+            placeholder='HH:MM:SS'
           />
+
+          {/* Selección de Tema */}
+          <FormControl component='fieldset' sx={{ mt: 2 }}>
+            <FormLabel component='legend'>Tema</FormLabel>
+            <RadioGroup
+              row
+              name='topic'
+              value={formik.values.topic}
+              onChange={formik.handleChange}
+            >
+              <FormControlLabel
+                value='SCRUM'
+                control={<Radio />}
+                label='SCRUM'
+              />
+              <FormControlLabel
+                value='PMBOK'
+                control={<Radio />}
+                label='PMBOK'
+              />
+            </RadioGroup>
+            {formik.touched.topic && formik.errors.topic && (
+              <Alert severity='error'>{formik.errors.topic}</Alert>
+            )}
+          </FormControl>
 
           {/* Pistas Horizontales */}
           <Typography variant='h6' sx={{ my: 2 }}>
             Pistas Horizontales
           </Typography>
           {acrossClues.map((clue, index) => (
-            <Grid container spacing={2} key={`across-${index}`}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label='Pista'
-                  value={clue.clue}
-                  onChange={(e) =>
-                    handleClueChange('across', index, 'clue', e.target.value)
-                  }
-                  margin='normal'
-                />
-              </Grid>
-              <Grid item xs={4}>
+            <Box key={`across-${index}`} sx={{ mb: 2 }}>
+              <TextField
+                fullWidth
+                label='Pista'
+                value={clue.clue}
+                onChange={(e) =>
+                  handleClueChange('across', index, 'clue', e.target.value)
+                }
+                sx={{ mb: 1 }}
+              />
+              <Box display='flex' alignItems='center'>
                 <TextField
                   label='Respuesta'
                   value={clue.answer}
                   onChange={(e) =>
                     handleClueChange('across', index, 'answer', e.target.value)
                   }
+                  sx={{ mr: 1 }}
                 />
-              </Grid>
-              <Grid item xs={3}>
                 <TextField
                   label='Fila'
                   type='number'
-                  value={clue.row}
+                  value={clue.row.toString()}
                   onChange={(e) =>
                     handleClueChange('across', index, 'row', e.target.value)
                   }
+                  sx={{ mr: 1 }}
                 />
-              </Grid>
-              <Grid item xs={3}>
                 <TextField
                   label='Columna'
                   type='number'
-                  value={clue.col}
+                  value={clue.col.toString()}
                   onChange={(e) =>
                     handleClueChange('across', index, 'col', e.target.value)
                   }
+                  sx={{ mr: 1 }}
                 />
-              </Grid>
-              <Grid item xs={2}>
                 <IconButton
                   color='error'
                   onClick={() => handleRemoveClue('across', index)}
                 >
                   <Remove />
                 </IconButton>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           ))}
           <Button onClick={() => handleAddClue('across')} sx={{ mt: 2 }}>
             <Add /> Agregar Pista Horizontal
@@ -290,64 +360,59 @@ export const NewCrossword = () => {
             Pistas Verticales
           </Typography>
           {downClues.map((clue, index) => (
-            <Grid container spacing={2} key={`down-${index}`}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label='Pista'
-                  value={clue.clue}
-                  onChange={(e) =>
-                    handleClueChange('down', index, 'clue', e.target.value)
-                  }
-                  margin='normal'
-                />
-              </Grid>
-              <Grid item xs={4}>
+            <Box key={`down-${index}`} sx={{ mb: 2 }}>
+              <TextField
+                fullWidth
+                label='Pista'
+                value={clue.clue}
+                onChange={(e) =>
+                  handleClueChange('down', index, 'clue', e.target.value)
+                }
+                sx={{ mb: 1 }}
+              />
+              <Box display='flex' alignItems='center'>
                 <TextField
                   label='Respuesta'
                   value={clue.answer}
                   onChange={(e) =>
                     handleClueChange('down', index, 'answer', e.target.value)
                   }
+                  sx={{ mr: 1 }}
                 />
-              </Grid>
-              <Grid item xs={3}>
                 <TextField
                   label='Fila'
                   type='number'
-                  value={clue.row}
+                  value={clue.row.toString()}
                   onChange={(e) =>
                     handleClueChange('down', index, 'row', e.target.value)
                   }
+                  sx={{ mr: 1 }}
                 />
-              </Grid>
-              <Grid item xs={3}>
                 <TextField
                   label='Columna'
                   type='number'
-                  value={clue.col}
+                  value={clue.col.toString()}
                   onChange={(e) =>
                     handleClueChange('down', index, 'col', e.target.value)
                   }
+                  sx={{ mr: 1 }}
                 />
-              </Grid>
-              <Grid item xs={2}>
                 <IconButton
                   color='error'
                   onClick={() => handleRemoveClue('down', index)}
                 >
                   <Remove />
                 </IconButton>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           ))}
           <Button onClick={() => handleAddClue('down')} sx={{ mt: 2 }}>
             <Add /> Agregar Pista Vertical
           </Button>
 
-          {formik.errors.general && (
+          {generalError && (
             <Alert severity='error' sx={{ mt: 2 }}>
-              {formik.errors.general}
+              {generalError}
             </Alert>
           )}
 
@@ -381,7 +446,10 @@ export const NewCrossword = () => {
             Dificultad: {formik.values.difficulty}
           </Typography>
           <Typography variant='subtitle2'>
-            Tiempo Límite: {formik.values.time_limit} minutos
+            Tiempo Límite: {formik.values.time_limit}
+          </Typography>
+          <Typography variant='subtitle2'>
+            Tema: {formik.values.topic}
           </Typography>
           <Box sx={{ mt: 3 }}>
             <Crossword
@@ -392,8 +460,8 @@ export const NewCrossword = () => {
                     {
                       clue: clue.clue,
                       answer: clue.answer.toUpperCase(),
-                      row: parseInt(clue.row),
-                      col: parseInt(clue.col)
+                      row: clue.row,
+                      col: clue.col
                     }
                   ])
                 ),
@@ -403,8 +471,8 @@ export const NewCrossword = () => {
                     {
                       clue: clue.clue,
                       answer: clue.answer.toUpperCase(),
-                      row: parseInt(clue.row),
-                      col: parseInt(clue.col)
+                      row: clue.row,
+                      col: clue.col
                     }
                   ])
                 )

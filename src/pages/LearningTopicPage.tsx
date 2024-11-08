@@ -7,38 +7,62 @@ import {
   TimelineContent,
   TimelineDot
 } from '@mui/lab'
-import { Typography, Box, Button } from '@mui/material'
+import { Typography, Box } from '@mui/material'
 import { supabase } from '../services/supabase'
 import { useNavigate, useParams } from 'react-router-dom'
 import useSession from '../hooks/useSession'
 import { timelineItemClasses } from '@mui/lab/TimelineItem'
 import { theme } from '../components/Theme'
+import { learningData } from '../utils/learningData'
+
+// Tipos de dificultad y tema específicos para Supabase
+type Difficulty = 'EASY' | 'MEDIUM' | 'HARD'
+type Topic = 'SCRUM' | 'PMBOK'
+
+// Definimos el tipo para el registro de progreso
+type LearningProgress = {
+  created_at?: string
+  difficulty: Difficulty
+  profile_id: string
+  topic: Topic
+}
 
 export default function LearningTopicPage() {
   const navigate = useNavigate()
   const { session } = useSession()
 
-  const { crosswordDifficulty, crosswordTopic } = useParams()
+  const { crosswordDifficulty, crosswordTopic } = useParams<{
+    crosswordDifficulty?: string
+    crosswordTopic?: string
+  }>()
 
   const handleComplete = async () => {
-    if (!session) return
-    // Registro del progreso en Supabase
-    const { error } = await supabase.from('learning_progress').insert([
-      {
-        topic: crosswordTopic?.toUpperCase(),
-        difficulty: crosswordDifficulty?.toUpperCase(),
-        profile_id: session.user.id
-      }
-    ])
+    if (!session || !crosswordTopic || !crosswordDifficulty) return
+
+    // Convertimos `crosswordDifficulty` y `crosswordTopic` a tipos compatibles
+    const difficulty = crosswordDifficulty.toUpperCase() as Difficulty
+    const topic = crosswordTopic.toUpperCase() as Topic
+
+    const { error } = await supabase
+      .from('learning_progress')
+      .insert<LearningProgress>([
+        {
+          topic,
+          difficulty,
+          profile_id: session.user.id
+        }
+      ])
 
     if (!error) {
       navigate(
         `/app/crosswords/${crosswordTopic}/${crosswordDifficulty}/levels`
-      ) // Cambia '/next-page' a la ruta deseada
+      )
     } else {
       console.error('Error registrando el progreso:', error)
     }
   }
+
+  if (!crosswordTopic) return <div>Ruta no valida!</div>
 
   return (
     <div className='nes-container is-rounded is-dark !w-[1500px] max-w-[96%] !p-8 !mx-auto !mb-20'>
@@ -63,96 +87,61 @@ export default function LearningTopicPage() {
           width: '80%'
         }}
       >
-        <TimelineItem>
-          <TimelineSeparator>
-            <TimelineDot />
-            <TimelineConnector />
-          </TimelineSeparator>
-          <TimelineContent
-            sx={{
-              mb: 10
-            }}
-          >
-            <Typography
-              variant='h5'
-              component='span'
-              className='nes-text is-primary'
-            >
-              ¿Qué es Scrum?
-            </Typography>
-            <br />
-            <br />
-            <Typography>
-              Scrum es una metodología ágil de trabajo colaborativo que permite
-              la organización y desarrollo de proyectos de manera iterativa e
-              incremental, enfocándose en la eficiencia y la adaptabilidad.
-            </Typography>
-          </TimelineContent>
-        </TimelineItem>
-
-        <TimelineItem>
-          <TimelineSeparator>
-            <TimelineDot />
-            <TimelineConnector />
-          </TimelineSeparator>
-          <TimelineContent
-            sx={{
-              mb: 10
-            }}
-          >
-            <Typography variant='h6' component='span'>
-              Video Explicativo
-            </Typography>
-            <Box
+        {learningData[crosswordTopic.toUpperCase()].map((item, index) => (
+          <TimelineItem key={index}>
+            <TimelineSeparator>
+              <TimelineDot color={item.dotColor} />
+              <TimelineConnector />
+            </TimelineSeparator>
+            <TimelineContent
               sx={{
-                mt: 2,
-                position: 'relative',
-                paddingBottom: '56.25%',
-                height: 0
+                mb:
+                  index !==
+                  learningData[crosswordTopic.toUpperCase()].length - 1
+                    ? 10
+                    : 0
               }}
             >
-              <iframe
-                width='100%'
-                height='100%'
-                src='https://www.youtube.com/embed/sLexw-z13Fo'
-                title='SCRUM Introduction'
-                allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
-                allowFullScreen
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%'
-                }}
-              ></iframe>
-            </Box>
-          </TimelineContent>
-        </TimelineItem>
-
-        <TimelineItem>
-          <TimelineSeparator>
-            <TimelineDot color='primary' />
-            <TimelineConnector />
-          </TimelineSeparator>
-          <TimelineContent
-            sx={{
-              mb: 0
-            }}
-          >
-            <Typography variant='h6' component='span'>
-              ¿Qué es Scrum?
-            </Typography>
-            <Typography>
-              Scrum es una metodología ágil de trabajo colaborativo que permite
-              la organización y desarrollo de proyectos de manera iterativa e
-              incremental, enfocándose en la eficiencia y la adaptabilidad.
-            </Typography>
-          </TimelineContent>
-        </TimelineItem>
+              <Typography variant='h6' component='span'>
+                {item.title}
+              </Typography>
+              {item.content && (
+                <>
+                  <br />
+                  <Typography>{item.content}</Typography>
+                </>
+              )}
+              {item.video && (
+                <Box
+                  sx={{
+                    mt: 2,
+                    position: 'relative',
+                    paddingBottom: '56.25%',
+                    height: 0
+                  }}
+                >
+                  <iframe
+                    width='100%'
+                    height='100%'
+                    src={item.video}
+                    title={item.title}
+                    allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
+                    allowFullScreen
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%'
+                    }}
+                  ></iframe>
+                </Box>
+              )}
+            </TimelineContent>
+          </TimelineItem>
+        ))}
       </Timeline>
 
-      {/* Botón para registrar el progreso */}
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
         <button className='nes-btn is-warning !p-4' onClick={handleComplete}>
           Estoy listo!

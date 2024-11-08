@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import App from './App'
 import Login from './pages/LoginPage'
 import SessionProvider from './context/SessionContext/SessionProvider'
@@ -34,38 +34,96 @@ export const router = createBrowserRouter([
         <ProfileProvider>
           <ProtectedRoute>
             <AppLayout>
-              <Outlet />
+              <MenuPage />
             </AppLayout>
           </ProtectedRoute>
         </ProfileProvider>
       </SessionProvider>
-    ),
-    children: [
-      {
-        path: 'crosswords',
-        element: <MenuPage />
-      },
-      {
-        path: 'crosswords/:id',
-        element: <CrosswordPage />
-      },
-      {
-        path: 'crosswords/new',
-        element: <NewCrossword />
-      },
-      {
-        path: 'crosswords/:crosswordTopic/:crosswordDifficulty/levels',
-        element: <CrosswordsLevelsMenu />
-      },
-      {
-        path: 'crosswords/:crosswordTopic/:crosswordDifficulty/levels/tutorial',
-        element: <LearningTopicPage />
-      },
-      {
-        path: 'crosswords/:crosswordTopic/:crosswordDifficulty/levels/:crosswordId',
-        element: <CrosswordPage />
-      }
-    ]
+    )
+  },
+  {
+    path: '/app/crosswords',
+    element: (
+      <SessionProvider>
+        <ProfileProvider>
+          <ProtectedRoute>
+            <AppLayout>
+              <MenuPage />
+            </AppLayout>
+          </ProtectedRoute>
+        </ProfileProvider>
+      </SessionProvider>
+    )
+  },
+  {
+    path: '/app/crosswords/list',
+    element: (
+      <SessionProvider>
+        <ProfileProvider>
+          <ProtectedRoute>
+            <AppLayout>
+              <CrosswordsListPage topic='SCRUM' />
+            </AppLayout>
+          </ProtectedRoute>
+        </ProfileProvider>
+      </SessionProvider>
+    )
+  },
+  {
+    path: '/app/crosswords/new',
+    element: (
+      <SessionProvider>
+        <ProfileProvider>
+          <ProtectedRoute>
+            <AppLayout>
+              <NewCrossword />
+            </AppLayout>
+          </ProtectedRoute>
+        </ProfileProvider>
+      </SessionProvider>
+    )
+  },
+  {
+    path: '/app/crosswords/:crosswordTopic/:crosswordDifficulty/levels',
+    element: (
+      <SessionProvider>
+        <ProfileProvider>
+          <ProtectedRoute>
+            <AppLayout>
+              <CrosswordsLevelsMenu />
+            </AppLayout>
+          </ProtectedRoute>
+        </ProfileProvider>
+      </SessionProvider>
+    )
+  },
+  {
+    path: '/app/crosswords/:crosswordTopic/:crosswordDifficulty/levels/tutorial',
+    element: (
+      <SessionProvider>
+        <ProfileProvider>
+          <ProtectedRoute>
+            <AppLayout>
+              <LearningTopicPage />
+            </AppLayout>
+          </ProtectedRoute>
+        </ProfileProvider>
+      </SessionProvider>
+    )
+  },
+  {
+    path: '/app/crosswords/:crosswordTopic/:crosswordDifficulty/levels/:crosswordId',
+    element: (
+      <SessionProvider>
+        <ProfileProvider>
+          <ProtectedRoute>
+            <AppLayout>
+              <CrosswordPage />
+            </AppLayout>
+          </ProtectedRoute>
+        </ProfileProvider>
+      </SessionProvider>
+    )
   },
   {
     path: '/mail-confirmation',

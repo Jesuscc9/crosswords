@@ -169,6 +169,7 @@ export type Database = {
       user_progress: {
         Row: {
           completed: boolean | null
+          created_at: string
           crossword_id: number | null
           current_answers: Json | null
           id: number
@@ -178,6 +179,7 @@ export type Database = {
         }
         Insert: {
           completed?: boolean | null
+          created_at?: string
           crossword_id?: number | null
           current_answers?: Json | null
           id?: number
@@ -187,6 +189,7 @@ export type Database = {
         }
         Update: {
           completed?: boolean | null
+          created_at?: string
           crossword_id?: number | null
           current_answers?: Json | null
           id?: number
@@ -266,6 +269,42 @@ export type Database = {
             foreignKeyName: "user_scores_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_used_clues: {
+        Row: {
+          created_at: string
+          crossword_id: number | null
+          id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          crossword_id?: number | null
+          id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          crossword_id?: number | null
+          id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_used_clues_crossword_id_fkey"
+            columns: ["crossword_id"]
+            isOneToOne: false
+            referencedRelation: "crosswords"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_used_clues_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },

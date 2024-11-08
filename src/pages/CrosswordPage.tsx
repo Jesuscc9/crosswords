@@ -1,41 +1,79 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Container,
   Box,
   Typography,
   CircularProgress,
-  Button,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  debounce,
+  Stack
 } from '@mui/material'
+import { ErrorDialog } from '../components/ErrorDialog'
 import { supabase } from '../services/supabase'
 import Crossword from '@jaredreisinger/react-crossword'
 import useLocalStorage from '../hooks/useLocalStorage'
 import useSession from '../hooks/useSession'
 import { theme } from '../components/Theme'
+import { Database } from '../types/db.types'
+import { CluesInputOriginal } from '@jaredreisinger/react-crossword/dist/types'
+
+type iCrossword = Database['public']['Tables']['crosswords']['Row']
+
+// Función para convertir "HH:MM:SS" en segundos
+function intervalToSeconds(interval: string): number {
+  const [hours, minutes, seconds] = interval.split(':').map(Number)
+  return hours * 3600 + minutes * 60 + seconds
+}
+
+// Función para convertir segundos en formato "HH:MM:SS"
+function secondsToIntervalFormat(seconds: number): string {
+  if (isNaN(seconds) || seconds < 0) return '00:00:00'
+  const hours = Math.floor(seconds / 3600)
+    .toString()
+    .padStart(2, '0')
+  const minutes = Math.floor((seconds % 3600) / 60)
+    .toString()
+    .padStart(2, '0')
+  const secs = Math.floor(seconds % 60)
+    .toString()
+    .padStart(2, '0')
+  return `${hours}:${minutes}:${secs}`
+}
 
 export default function CrosswordPage() {
-  const { crosswordId, crosswordTopic, crosswordDifficulty } = useParams() // Obtener el id de la URL
-  const navigate = useNavigate() // Hook para navegar entre páginas
-  const [crosswordData, setCrosswordData] = useState(null)
+  const { crosswordId, crosswordTopic, crosswordDifficulty } = useParams()
+  const navigate = useNavigate()
+  const [crosswordData, setCrosswordData] = useState<iCrossword>()
   const [loading, setLoading] = useState(true)
+  const [displayTimeSpent, setDisplayTimeSpent] = useState<number>(0) // Tiempo para la UI
+  const [dbUpdateTimeSpent, setDbUpdateTimeSpent] = useState<number>(0) // Tiempo para la BD
+  const [timeLimit, setTimeLimit] = useState<number | null>(null) // Límite de tiempo en segundos
   const [showInstructions, setShowInstructions] = useLocalStorage(
     'showInstructions',
     true
   )
+
+  const [usedClues, setUsedClues] = useState<
+    Database['public']['Tables']['user_used_clues']['Row'][]
+  >([])
+
   const [isFetchingLastProgress, setIsFetchingLastProgress] = useState(false)
   const [prevProgressId, setPrevProgressId] = useState<number | undefined>(
     undefined
   )
-
   const { session } = useSession()
-
   const [showNotFoundRoute, setShowNotFoundRoute] = useState(false)
-
   const [instructionsOpen, setInstructionsOpen] = useState(false)
+  const [timeExpired, setTimeExpired] = useState(false) // Estado para controlar el diálogo de tiempo agotado
+
+  const storageKey = useMemo(
+    () => `crossword-${crosswordId}-${session?.user.id}`,
+    [crosswordId, session?.user]
+  )
 
   useEffect(() => {
     if (!crosswordTopic || !crosswordDifficulty || !crosswordId) {
@@ -43,7 +81,6 @@ export default function CrosswordPage() {
       return
     }
 
-    // Función para cargar el crucigrama específico de la base de datos
     const fetchCrossword = async () => {
       const { data, error } = await supabase
         .from('crosswords')
@@ -56,7 +93,12 @@ export default function CrosswordPage() {
       if (error) {
         console.error('Error al cargar el crucigrama:', error)
       } else {
+        console.log({ data })
         setCrosswordData(data)
+        console.log('se establece el tiempo limite')
+        setTimeLimit(
+          data?.time_limit ? intervalToSeconds(data.time_limit as string) : 0
+        )
       }
 
       setLoading(false)
@@ -67,6 +109,7 @@ export default function CrosswordPage() {
 
   useEffect(() => {
     if (!session) return
+    if (!crosswordData) return
 
     setIsFetchingLastProgress(true)
 
@@ -76,43 +119,154 @@ export default function CrosswordPage() {
         .select('*')
         .eq('crossword_id', Number(crosswordId))
         .eq('profile_id', session?.user.id)
-        .limit(1)
         .order('created_at', { ascending: false })
+        .limit(1)
 
       if (error) {
         console.error('Error al cargar el progreso del crucigrama:', error)
       } else {
-        console.log('prev')
-
         if (data.length > 0) {
-          const prevProgress = data[0].current_answers as string
+          console.log({ data, crosswordData })
           setPrevProgressId(data[0].id)
+          const prevProgress = data[0].current_answers as string
+          if (prevProgress !== null) {
+            window.localStorage.setItem(storageKey, JSON.parse(prevProgress))
+          }
 
-          console.log({ prevProgress })
-
-          window.localStorage.setItem(
-            `crossword-${crosswordId}`,
-            JSON.parse(prevProgress)
-          )
+          if (data[0].time_spent === crosswordData?.time_limit) {
+            console.log({ data, crosswordData })
+            setTimeExpired(true)
+            setDisplayTimeSpent(0)
+          } else {
+            const fetchedTimeSpent = data[0].time_spent
+              ? intervalToSeconds(data[0].time_spent)
+              : 0
+            setDisplayTimeSpent(fetchedTimeSpent)
+            setDbUpdateTimeSpent(fetchedTimeSpent)
+          }
+        } else {
+          // if user do not have previous progress, we create a new one with default values
+          await supabase.from('user_progress').insert([
+            {
+              crossword_id: Number(crosswordId),
+              profile_id: session?.user.id,
+              time_spent: '00:00:00'
+            }
+          ])
+          fetchLastProgress()
         }
-
-        console.log(data)
       }
 
       setIsFetchingLastProgress(false)
     }
 
     fetchLastProgress()
-  }, [crosswordId, session])
+  }, [crosswordId, session, storageKey, crosswordData, timeExpired])
 
-  const handleUpdateCrosswordProgress = async () => {
+  useEffect(() => {
+    if (!session) return
+    if (!crosswordId) return
+
+    const fetchClues = () => {
+      supabase
+        .from('user_used_clues')
+        .select('*')
+        .eq('crossword_id', crosswordId)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error al cargar las pistas:', error)
+          } else {
+            console.log({ data })
+            setUsedClues(data)
+          }
+        })
+    }
+
+    fetchClues()
+  }, [crosswordId, session, storageKey, timeExpired])
+
+  // Actualizar `displayTimeSpent` cada segundo en la UI
+  useEffect(() => {
+    console.log({ timeLimit })
+    if (!timeLimit) return
+    if (!prevProgressId) return
+
+    const displayInterval = setInterval(() => {
+      setDisplayTimeSpent((prevTime) => {
+        const newTime = prevTime + 1
+        if (newTime >= timeLimit) {
+          clearInterval(displayInterval)
+          setTimeExpired(true) // Muestra el diálogo de error
+
+          supabase
+            .from('user_progress')
+            .update({
+              time_spent: secondsToIntervalFormat(timeLimit)
+            })
+            .eq('id', prevProgressId)
+            .then(() => {
+              console.log('se marca')
+            })
+
+          setDbUpdateTimeSpent(timeLimit) // Actualiza el tiempo en la base de datos
+          return timeLimit
+        }
+        return newTime
+      })
+    }, 1000)
+
+    return () => clearInterval(displayInterval)
+  }, [timeLimit, prevProgressId])
+
+  // Actualizar `dbUpdateTimeSpent` cada 5 segundos y enviar a la base de datos
+  useEffect(() => {
+    console.log({ timeLimit })
+    if (!timeLimit) return
+    console.log('entra aki')
+    const dbUpdateInterval = setInterval(() => {
+      setDbUpdateTimeSpent((prevTime) => {
+        const newTime = prevTime + 5
+        if (newTime >= timeLimit) {
+          clearInterval(dbUpdateInterval)
+          return timeLimit
+        }
+        return newTime
+      })
+    }, 5000)
+
+    return () => clearInterval(dbUpdateInterval)
+  }, [timeLimit])
+
+  // Función para iniciar el intervalo de actualización en la base de datos cada 5 segundos
+  const updateDbTimeSpent = useCallback(async () => {
+    console.log('Updating time spent:', dbUpdateTimeSpent)
+
+    if (timeExpired) return
+
+    await supabase
+      .from('user_progress')
+      .update({
+        time_spent: secondsToIntervalFormat(dbUpdateTimeSpent)
+      })
+      .eq('id', prevProgressId)
+  }, [dbUpdateTimeSpent, prevProgressId, timeExpired])
+
+  // Llama a `updateDbTimeSpent` cada vez que `dbUpdateTimeSpent` cambia, si el tiempo no ha expirado
+  useEffect(() => {
+    if (
+      session &&
+      prevProgressId &&
+      timeLimit !== null &&
+      dbUpdateTimeSpent < timeLimit
+    ) {
+      updateDbTimeSpent()
+    }
+  }, [dbUpdateTimeSpent, session, prevProgressId, timeLimit])
+
+  const handleUpdateCrosswordProgress = useCallback(async () => {
     if (!session) return
 
-    console.log('hola')
-    // Actualizar el progreso del crucigrama
-    console.log('Progreso actualizado')
-
-    const data = window.localStorage.getItem(`crossword-${crosswordId}`)
+    const data = window.localStorage.getItem(storageKey)
 
     const { data: updated } = await supabase
       .from('user_progress')
@@ -129,28 +283,50 @@ export default function CrosswordPage() {
       )
       .select()
 
-    console.log({ updated })
-
-    if (updated?.length > 0) {
+    if (updated !== null && updated?.length > 0) {
       window.localStorage.setItem(
-        `crossword-${crosswordId}`,
-        JSON.parse(updated[0]?.current_answers)
+        storageKey,
+        JSON.parse(updated[0]?.current_answers as string)
       )
     }
+  }, [session, storageKey, prevProgressId, crosswordId])
+
+  const handleRestartLevel = async () => {
+    console.log('Restarting level...')
+    console.log({ session, prevProgressId })
+    if (!session) return
+
+    if (!prevProgressId) return
+
+    // Elimina el progreso actual del crucigrama
+    await supabase.from('user_progress').delete().eq('id', prevProgressId)
+
+    // Reinicia el tiempo en la base de datos
+    setDbUpdateTimeSpent(0)
+    setDisplayTimeSpent(0)
+    setTimeExpired(false)
   }
 
-  // Manejar el cierre del diálogo de instrucciones
+  const debouncedUpdateProgress = useMemo(
+    () => debounce(handleUpdateCrosswordProgress, 3000),
+    [handleUpdateCrosswordProgress]
+  )
+
   const handleCloseInstructions = () => {
     setShowInstructions(false)
     setInstructionsOpen(false)
   }
 
-  // Mostrar el diálogo de instrucciones manualmente
   const handleOpenInstructions = () => {
     setInstructionsOpen(true)
   }
 
-  if (loading) {
+  const isInstructionsDialogOpen = useMemo(
+    () => showInstructions || instructionsOpen,
+    [showInstructions, instructionsOpen]
+  )
+
+  if (loading || isFetchingLastProgress || !crosswordData || !crosswordId) {
     return (
       <Box
         sx={{
@@ -164,6 +340,10 @@ export default function CrosswordPage() {
       </Box>
     )
   }
+
+  // Calcula el tiempo restante en segundos
+  const timeRemaining =
+    timeLimit !== null ? Math.max(0, timeLimit - displayTimeSpent) : 0
 
   return (
     <Container
@@ -185,6 +365,11 @@ export default function CrosswordPage() {
             <Typography variant='body1' color='yellow' gutterBottom>
               {crosswordData.description}
             </Typography>
+            <Typography variant='body2' color='error' gutterBottom>
+              {timeExpired
+                ? '¡Tiempo agotado!'
+                : `Tiempo restante: ${secondsToIntervalFormat(timeRemaining)}`}
+            </Typography>
             <Box
               display='flex'
               sx={{
@@ -196,12 +381,13 @@ export default function CrosswordPage() {
               }}
             >
               <Crossword
-                data={crosswordData.data}
+                key={storageKey}
+                data={crosswordData.data as CluesInputOriginal}
                 useStorage
-                storageKey={`crossword-${crosswordId}`}
+                storageKey={storageKey}
                 acrossLabel='Horizontal'
                 downLabel='Vertical'
-                onCellChange={handleUpdateCrosswordProgress}
+                onCellChange={debouncedUpdateProgress}
                 theme={{
                   highlightBackground: 'orange'
                 }}
@@ -232,9 +418,8 @@ export default function CrosswordPage() {
           </Typography>
         )}
 
-        {/* Diálogo de Instrucciones */}
         <Dialog
-          open={showInstructions || instructionsOpen}
+          open={isInstructionsDialogOpen}
           onClose={handleCloseInstructions}
         >
           <DialogTitle>Instrucciones del Crucigrama</DialogTitle>
@@ -257,16 +442,47 @@ export default function CrosswordPage() {
           </DialogActions>
         </Dialog>
 
-        {/* Diálogo de Ruta no encontrada */}
-        <Dialog open={showNotFoundRoute}>
-          <DialogTitle>Error</DialogTitle>
+        <ErrorDialog
+          open={showNotFoundRoute}
+          onClose={() => navigate('/app/crosswords')}
+          title='Error'
+          message='No se encontró la ruta solicitada.'
+        />
+
+        {/* Diálogo de tiempo agotado */}
+        <Dialog
+          open={timeExpired}
+          onClose={() =>
+            navigate(
+              `/app/crosswords/${crosswordTopic}/${crosswordDifficulty}/levels`
+            )
+          }
+        >
+          <DialogTitle>Tiempo Agotado</DialogTitle>
           <DialogContent>
-            <Typography variant='body1'>
-              No se encontró la ruta solicitada.
+            <Typography>
+              El tiempo para completar el crucigrama ha expirado.
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => navigate('/crosswords')}>Volver</Button>
+            <Stack direction='row' justifyContent='space-between' width='100%'>
+              <button
+                className='nes-btn is-secondary'
+                onClick={() =>
+                  navigate(
+                    `/app/crosswords/${crosswordTopic}/${crosswordDifficulty}/levels`
+                  )
+                }
+              >
+                Aceptar
+              </button>
+              <button
+                className='nes-btn is-primary'
+                onClick={handleRestartLevel}
+              >
+                Reiniciar
+              </button>
+            </Stack>
           </DialogActions>
         </Dialog>
       </Box>

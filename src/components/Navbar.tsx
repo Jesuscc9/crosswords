@@ -33,10 +33,14 @@ const pages = [
     title: 'Inicio',
     path: '/app/crosswords'
   },
-
   {
     title: 'Crear un crucigrama',
     path: '/app/crosswords/new',
+    role: ['admin']
+  },
+  {
+    title: 'Lista de crucigramas',
+    path: '/app/crosswords/list',
     role: ['admin']
   }
 ]
