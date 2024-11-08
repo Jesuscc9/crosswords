@@ -27,8 +27,6 @@ const CrosswordsLevelsMenu: React.FC = () => {
   const { crosswordTopic, crosswordDifficulty } = useParams()
   const { session } = useSession()
 
-  console.log({ crosswordTopic, crosswordDifficulty })
-
   const [levels, setLevels] = useState<number[]>([])
   const [completedLevels, setCompletedLevels] = useState<number[]>([])
   const [showLockedDialog, setShowLockedDialog] = useState(false)
@@ -70,7 +68,6 @@ const CrosswordsLevelsMenu: React.FC = () => {
 
       if (error) console.error('Error fetching tutorial:', error)
       else {
-        console.log({ data })
         setTutorialCompleted(data.length > 0)
       }
     }

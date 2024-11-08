@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Container,
@@ -93,9 +93,7 @@ export default function CrosswordPage() {
       if (error) {
         console.error('Error al cargar el crucigrama:', error)
       } else {
-        console.log({ data })
         setCrosswordData(data)
-        console.log('se establece el tiempo limite')
         setTimeLimit(
           data?.time_limit ? intervalToSeconds(data.time_limit as string) : 0
         )
@@ -126,7 +124,6 @@ export default function CrosswordPage() {
         console.error('Error al cargar el progreso del crucigrama:', error)
       } else {
         if (data.length > 0) {
-          console.log({ data, crosswordData })
           setPrevProgressId(data[0].id)
           const prevProgress = data[0].current_answers as string
           if (prevProgress !== null) {
@@ -134,7 +131,6 @@ export default function CrosswordPage() {
           }
 
           if (data[0].time_spent === crosswordData?.time_limit) {
-            console.log({ data, crosswordData })
             setTimeExpired(true)
             setDisplayTimeSpent(0)
           } else {
@@ -176,7 +172,6 @@ export default function CrosswordPage() {
           if (error) {
             console.error('Error al cargar las pistas:', error)
           } else {
-            console.log({ data })
             setUsedClues(data)
           }
         })
@@ -187,7 +182,6 @@ export default function CrosswordPage() {
 
   // Actualizar `displayTimeSpent` cada segundo en la UI
   useEffect(() => {
-    console.log({ timeLimit })
     if (!timeLimit) return
     if (!prevProgressId) return
 
@@ -204,9 +198,7 @@ export default function CrosswordPage() {
               time_spent: secondsToIntervalFormat(timeLimit)
             })
             .eq('id', prevProgressId)
-            .then(() => {
-              console.log('se marca')
-            })
+            .then(() => {})
 
           setDbUpdateTimeSpent(timeLimit) // Actualiza el tiempo en la base de datos
           return timeLimit
@@ -220,9 +212,7 @@ export default function CrosswordPage() {
 
   // Actualizar `dbUpdateTimeSpent` cada 5 segundos y enviar a la base de datos
   useEffect(() => {
-    console.log({ timeLimit })
     if (!timeLimit) return
-    console.log('entra aki')
     const dbUpdateInterval = setInterval(() => {
       setDbUpdateTimeSpent((prevTime) => {
         const newTime = prevTime + 5
@@ -239,8 +229,6 @@ export default function CrosswordPage() {
 
   // Función para iniciar el intervalo de actualización en la base de datos cada 5 segundos
   const updateDbTimeSpent = useCallback(async () => {
-    console.log('Updating time spent:', dbUpdateTimeSpent)
-
     if (timeExpired) return
 
     await supabase
@@ -292,14 +280,13 @@ export default function CrosswordPage() {
   }, [session, storageKey, prevProgressId, crosswordId])
 
   const handleRestartLevel = async () => {
-    console.log('Restarting level...')
-    console.log({ session, prevProgressId })
     if (!session) return
 
     if (!prevProgressId) return
 
     // Elimina el progreso actual del crucigrama
     await supabase.from('user_progress').delete().eq('id', prevProgressId)
+    localStorage.removeItem(storageKey)
 
     // Reinicia el tiempo en la base de datos
     setDbUpdateTimeSpent(0)
