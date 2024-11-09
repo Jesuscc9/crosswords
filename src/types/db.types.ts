@@ -278,19 +278,19 @@ export type Database = {
         Row: {
           created_at: string
           crossword_id: number | null
-          id: string
+          id: number
           profile_id: string
         }
         Insert: {
           created_at?: string
           crossword_id?: number | null
-          id: string
+          id?: number
           profile_id: string
         }
         Update: {
           created_at?: string
           crossword_id?: number | null
-          id?: string
+          id?: number
           profile_id?: string
         }
         Relationships: [
@@ -302,9 +302,9 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_used_clues_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
+            foreignKeyName: "user_used_clues_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },

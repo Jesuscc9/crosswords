@@ -52,10 +52,12 @@ export default function CrosswordPage() {
   const [displayTimeSpent, setDisplayTimeSpent] = useState<number>(0) // Tiempo para la UI
   const [dbUpdateTimeSpent, setDbUpdateTimeSpent] = useState<number>(0) // Tiempo para la BD
   const [timeLimit, setTimeLimit] = useState<number | null>(null) // Límite de tiempo en segundos
+  const [noCluesLeft, setNoCluesLeft] = useState(false)
   const [showInstructions, setShowInstructions] = useLocalStorage(
     'showInstructions',
     true
   )
+  const [isCompleted, setIsCompleted] = useState(false)
 
   const [usedClues, setUsedClues] = useState<
     Database['public']['Tables']['user_used_clues']['Row'][]
@@ -130,6 +132,8 @@ export default function CrosswordPage() {
             window.localStorage.setItem(storageKey, JSON.parse(prevProgress))
           }
 
+          setIsCompleted(data[0]?.completed || false)
+
           if (data[0].time_spent === crosswordData?.time_limit) {
             setTimeExpired(true)
             setDisplayTimeSpent(0)
@@ -168,6 +172,7 @@ export default function CrosswordPage() {
         .from('user_used_clues')
         .select('*')
         .eq('crossword_id', crosswordId)
+        .eq('profile_id', session.user.id)
         .then(({ data, error }) => {
           if (error) {
             console.error('Error al cargar las pistas:', error)
@@ -281,18 +286,64 @@ export default function CrosswordPage() {
 
   const handleRestartLevel = async () => {
     if (!session) return
-
     if (!prevProgressId) return
 
     // Elimina el progreso actual del crucigrama
     await supabase.from('user_progress').delete().eq('id', prevProgressId)
+    await supabase
+      .from('user_used_clues')
+      .delete()
+      .eq('crossword_id', Number(crosswordId))
+      .eq('profile_id', session.user.id)
     localStorage.removeItem(storageKey)
 
     // Reinicia el tiempo en la base de datos
     setDbUpdateTimeSpent(0)
     setDisplayTimeSpent(0)
+    setIsCompleted(false)
     setTimeExpired(false)
+    setUsedClues([])
   }
+
+  const handleCrosswordCorrect = async () => {
+    if (!prevProgressId) return
+
+    if (isCompleted) return
+
+    setIsCompleted(true)
+    await supabase
+      .from('user_progress')
+      .update({ completed: true })
+      .eq('id', prevProgressId)
+  }
+
+  const handleRevealClue = async () => {
+    if (!session?.user.id) return
+    if (!crosswordId) return
+
+    const { data, error } = await supabase
+      .from('user_used_clues')
+      .insert([
+        {
+          crossword_id: Number(crosswordId),
+          profile_id: session.user.id
+        }
+      ])
+      .select()
+      .single()
+
+    if (error || !data) return
+
+    setUsedClues((prevClues) => [...prevClues, data])
+  }
+
+  useEffect(() => {
+    if (usedClues.length >= 3) {
+      setNoCluesLeft(true)
+    } else {
+      setNoCluesLeft(false)
+    }
+  }, [usedClues])
 
   const debouncedUpdateProgress = useMemo(
     () => debounce(handleUpdateCrosswordProgress, 3000),
@@ -355,8 +406,41 @@ export default function CrosswordPage() {
             <Typography variant='body2' color='error' gutterBottom>
               {timeExpired
                 ? '¡Tiempo agotado!'
+                : noCluesLeft
+                ? '¡No hay pistas disponibles!'
                 : `Tiempo restante: ${secondsToIntervalFormat(timeRemaining)}`}
             </Typography>
+            <Stack
+              width='100%'
+              direction='row'
+              alignItems='center'
+              justifyContent='space-between'
+            >
+              <Box flexDirection='row-reverse' display='flex'>
+                {[...Array(3)].map((_, index) => {
+                  const usedCluesCount = usedClues.length
+
+                  if (usedCluesCount > index) {
+                    return (
+                      <i
+                        key={index}
+                        className='nes-icon is-large heart is-transparent'
+                      />
+                    )
+                  }
+
+                  return <i key={index} className='nes-icon is-large heart' />
+                })}
+              </Box>
+              <Box>
+                <button
+                  className='nes-btn is-success'
+                  onClick={handleRevealClue}
+                >
+                  Usar pista
+                </button>
+              </Box>
+            </Stack>
             <Box
               display='flex'
               sx={{
@@ -368,6 +452,7 @@ export default function CrosswordPage() {
               }}
             >
               <Crossword
+                onCrosswordCorrect={handleCrosswordCorrect}
                 key={storageKey}
                 data={crosswordData.data as CluesInputOriginal}
                 useStorage
@@ -438,7 +523,7 @@ export default function CrosswordPage() {
 
         {/* Diálogo de tiempo agotado */}
         <Dialog
-          open={timeExpired}
+          open={timeExpired && !noCluesLeft && !isCompleted}
           onClose={() =>
             navigate(
               `/app/crosswords/${crosswordTopic}/${crosswordDifficulty}/levels`
@@ -468,6 +553,70 @@ export default function CrosswordPage() {
                 onClick={handleRestartLevel}
               >
                 Reiniciar
+              </button>
+            </Stack>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          open={noCluesLeft && !isCompleted}
+          onClose={() =>
+            navigate(
+              `/app/crosswords/${crosswordTopic}/${crosswordDifficulty}/levels`
+            )
+          }
+        >
+          <DialogTitle>Buen intento!</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Has agotado todas las pistas disponibles. ¡Buena suerte!
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Stack direction='row' justifyContent='space-between' width='100%'>
+              <button
+                className='nes-btn is-secondary'
+                onClick={() =>
+                  navigate(
+                    `/app/crosswords/${crosswordTopic}/${crosswordDifficulty}/levels`
+                  )
+                }
+              >
+                Aceptar
+              </button>
+              <button
+                className='nes-btn is-primary'
+                onClick={handleRestartLevel}
+              >
+                Reiniciar
+              </button>
+            </Stack>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          open={isCompleted}
+          onClose={() =>
+            navigate(
+              `/app/crosswords/${crosswordTopic}/${crosswordDifficulty}/levels`
+            )
+          }
+        >
+          <DialogTitle>Felicidades!</DialogTitle>
+          <DialogContent>
+            <Typography>Has completado el crucigrama. ¡Bien hecho!</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Stack direction='row' justifyContent='end' width='100%'>
+              <button
+                className='nes-btn is-primary'
+                onClick={() =>
+                  navigate(
+                    `/app/crosswords/${crosswordTopic}/${crosswordDifficulty}/levels`
+                  )
+                }
+              >
+                Continuar
               </button>
             </Stack>
           </DialogActions>

@@ -33,6 +33,7 @@ const CrosswordsLevelsMenu: React.FC = () => {
   const [currentDifficulty, setCurrentDifficulty] = useState(
     crosswordDifficulty?.toUpperCase() as Difficulty
   )
+  const [usedCluesByCrossword, setUsedCluesByCrossword] = useState({})
   const [tutorialCompleted, setTutorialCompleted] = useState(false)
   const navigate = useNavigate()
 
@@ -48,12 +49,7 @@ const CrosswordsLevelsMenu: React.FC = () => {
 
       if (error) console.error('Error fetching levels:', error)
       else {
-        setLevels(data)
-        setCompletedLevels(
-          data
-            .filter((level: any) => level.is_completed)
-            .map((level: any) => level.id)
-        )
+        setLevels(data.map((level) => level.id))
       }
     }
 
@@ -75,6 +71,45 @@ const CrosswordsLevelsMenu: React.FC = () => {
     fetchLevels()
     fetchTutorial()
   }, [currentDifficulty, crosswordTopic, session])
+
+  useEffect(() => {
+    if (!session) return
+
+    const fetchProgress = async () => {
+      const { data: usedCluesData, error: usedCluesError } = await supabase
+        .from('user_used_clues')
+        .select('*')
+        .eq('profile_id', session?.user.id)
+
+      if (usedCluesError) {
+        console.error('Error fetching used clues:', usedCluesError)
+        return
+      }
+
+      setUsedCluesByCrossword(
+        Object.groupBy(usedCluesData, ({ crossword_id }) => crossword_id)
+      )
+
+      console.log({ usedCluesByCrossword, usedCluesData })
+
+      const { data, error } = await supabase
+        .from('user_progress')
+        .select('*')
+        .eq('profile_id', session?.user.id)
+
+      if (error) {
+        console.error('Error fetching user progress:', error)
+      } else {
+        const completedFilter = data.filter((e) => {
+          return e.completed
+        })
+
+        setCompletedLevels(completedFilter.map((level) => level.crossword_id))
+      }
+    }
+
+    fetchProgress()
+  }, [session])
 
   // const handleLevelClick = (level: number) => {
   //   if (
@@ -176,7 +211,7 @@ const CrosswordsLevelsMenu: React.FC = () => {
                 className={`nes-btn is-primary ${
                   !tutorialCompleted && 'is-disabled'
                 }`}
-                onClick={() => handleLevelClick(level?.id)}
+                onClick={() => handleLevelClick(level)}
                 sx={{
                   padding: 2,
                   borderRadius: '8px',
@@ -191,17 +226,38 @@ const CrosswordsLevelsMenu: React.FC = () => {
                 <Typography variant='h6' color='white' gutterBottom>
                   {index + 1}
                 </Typography>
-                <Box display='flex'>
-                  {[...Array(3)].map((_, starIndex) => (
-                    <i
-                      key={starIndex}
-                      className='nes-icon is-empty star'
-                      style={{
-                        fontSize: '1.5rem',
-                        color: isCompleted ? '#FFD700' : '#CCCCCC'
-                      }}
-                    />
-                  ))}
+                <Box display='flex' flexDirection='row'>
+                  {[...Array(3)].map((_, starIndex) => {
+                    const isCompleted = completedLevels.includes(level)
+
+                    const cluesUsed = usedCluesByCrossword[level]?.length || 0
+
+                    const score = 3 - cluesUsed
+
+                    const starIsFilled = starIndex < score
+                    console.log({
+                      starIndex,
+                      level,
+                      usedCluesByCrossword,
+                      cluesUsed,
+                      score,
+                      starIsFilled,
+                      isCompleted,
+                      completedLevels
+                    })
+                    return (
+                      <i
+                        key={starIndex}
+                        className={`nes-icon star ${
+                          (!starIsFilled || !isCompleted) && 'is-empty'
+                        }`}
+                        style={{
+                          fontSize: '1.5rem',
+                          color: isCompleted ? '#FFD700' : '#CCCCCC'
+                        }}
+                      />
+                    )
+                  })}
                 </Box>
               </Box>
             )
