@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import {
   Timeline,
   TimelineItem,
@@ -7,7 +7,7 @@ import {
   TimelineContent,
   TimelineDot
 } from '@mui/lab'
-import { Typography, Box } from '@mui/material'
+import { Typography, Box, Stack } from '@mui/material'
 import { supabase } from '../services/supabase'
 import { useNavigate, useParams } from 'react-router-dom'
 import useSession from '../hooks/useSession'
@@ -36,6 +36,9 @@ export default function LearningTopicPage() {
     crosswordTopic?: string
   }>()
 
+  const [currentStep, setCurrentStep] = React.useState(0)
+  const [stepRevealChar, setStepRevealChar] = React.useState(0)
+
   const handleComplete = async () => {
     if (!session || !crosswordTopic || !crosswordDifficulty) return
 
@@ -62,6 +65,31 @@ export default function LearningTopicPage() {
     }
   }
 
+  const handleNext = () => {
+    if (currentStep < learningData[crosswordTopic.toUpperCase()].length - 1) {
+      setCurrentStep((prev) => prev + 1)
+      setStepRevealChar(0)
+    }
+  }
+
+  useEffect(() => {
+    if (!learningData[crosswordTopic.toUpperCase()][currentStep]?.content)
+      return
+
+    const intervalId = setInterval(() => {
+      setStepRevealChar((prev) => prev + 1)
+      if (
+        stepRevealChar >=
+        learningData[crosswordTopic.toUpperCase()][currentStep].content.length
+      ) {
+        clearInterval(intervalId)
+      }
+    }, 33)
+  }, [currentStep])
+
+  const currentStepIsLast =
+    currentStep === learningData?.[crosswordTopic.toUpperCase()]?.length - 1
+
   if (!crosswordTopic) return <div>Ruta no valida!</div>
 
   return (
@@ -87,65 +115,84 @@ export default function LearningTopicPage() {
           width: '80%'
         }}
       >
-        {learningData[crosswordTopic.toUpperCase()].map((item, index) => (
-          <TimelineItem key={index}>
-            <TimelineSeparator>
-              <TimelineDot color={item.dotColor} />
-              <TimelineConnector />
-            </TimelineSeparator>
-            <TimelineContent
-              sx={{
-                mb:
-                  index !==
-                  learningData[crosswordTopic.toUpperCase()].length - 1
-                    ? 10
-                    : 0
-              }}
-            >
-              <Typography variant='h6' component='span'>
-                {item.title}
-              </Typography>
-              {item.content && (
-                <>
-                  <br />
-                  <Typography>{item.content}</Typography>
-                </>
-              )}
-              {item.video && (
-                <Box
-                  sx={{
-                    mt: 2,
-                    position: 'relative',
-                    paddingBottom: '56.25%',
-                    height: 0
-                  }}
-                >
-                  <iframe
-                    width='100%'
-                    height='100%'
-                    src={item.video}
-                    title={item.title}
-                    allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
-                    allowFullScreen
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%'
+        {learningData[crosswordTopic.toUpperCase()]
+          .filter((_, i) => i === currentStep)
+          .map((item, index) => (
+            <TimelineItem key={index}>
+              <TimelineSeparator>
+                <TimelineDot color={item.dotColor} />
+                <TimelineConnector />
+              </TimelineSeparator>
+              <TimelineContent
+                sx={{
+                  mb:
+                    index !==
+                    learningData[crosswordTopic.toUpperCase()].length - 1
+                      ? 4
+                      : 0
+                }}
+              >
+                <Typography variant='h6' component='span'>
+                  {item.title}
+                </Typography>
+                <Stack direction='row' mt={4}>
+                  {item.content && (
+                    <>
+                      <br />
+                      <section className='message-list'>
+                        <section className='message -left flex flex-col-reverse'>
+                          <i className='nes-kirby flex-shrink-0'></i>
+                          <div className='nes-balloon from-left'>
+                            <p className='text-black'>
+                              {item.content.slice(0, stepRevealChar)}
+                            </p>
+                          </div>
+                        </section>
+                      </section>
+                    </>
+                  )}
+                </Stack>
+                {item.video && (
+                  <Box
+                    sx={{
+                      mt: 2,
+                      position: 'relative',
+                      paddingBottom: '56.25%',
+                      height: 0
                     }}
-                  ></iframe>
-                </Box>
-              )}
-            </TimelineContent>
-          </TimelineItem>
-        ))}
+                  >
+                    <iframe
+                      width='100%'
+                      height='100%'
+                      src={item.video}
+                      title={item.title}
+                      allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
+                      allowFullScreen
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%'
+                      }}
+                    ></iframe>
+                  </Box>
+                )}
+              </TimelineContent>
+            </TimelineItem>
+          ))}
       </Timeline>
 
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-        <button className='nes-btn is-warning !p-4' onClick={handleComplete}>
-          Estoy listo!
-        </button>
+        {currentStepIsLast ? (
+          <button className='nes-btn is-warning !p-4' onClick={handleComplete}>
+            Estoy listo!
+          </button>
+        ) : (
+          <button className='nes-btn is-warning !p-4' onClick={handleNext}>
+            Continuar
+          </button>
+        )}
       </Box>
     </div>
   )

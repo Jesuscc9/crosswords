@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   Box,
   TextField,
@@ -22,8 +22,11 @@ import { useNavigate } from 'react-router-dom'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { supabase } from '../services/supabase'
-import Crossword from '@jaredreisinger/react-crossword'
+import Crossword, {
+  CrosswordProviderImperative
+} from '@jaredreisinger/react-crossword'
 import { Add, Remove } from '@mui/icons-material'
+import { iDifficulty, iTopic } from '../types/crosswords'
 
 // Tipos para las pistas y datos del crucigrama
 interface Clue {
@@ -49,6 +52,7 @@ interface FormValues {
 
 export const NewCrossword: React.FC = () => {
   const navigate = useNavigate()
+  const crosswordRef = React.useRef<CrosswordProviderImperative>(null)
 
   // Estado para almacenar las pistas horizontales y verticales
   const [acrossClues, setAcrossClues] = useState<Clue[]>([
@@ -57,6 +61,8 @@ export const NewCrossword: React.FC = () => {
   const [downClues, setDownClues] = useState<Clue[]>([
     { clue: '', answer: '', row: 0, col: 0 }
   ])
+
+  const storageKey = useMemo(() => `crossword-form-${Date.now()}`, [])
 
   // Estado para control de diálogo y envío
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -89,6 +95,11 @@ export const NewCrossword: React.FC = () => {
     },
     validationSchema: validationSchema,
     onSubmit: () => {
+      setTimeout(() => {
+        console.log(crosswordRef)
+        crosswordRef.current?.fillAllAnswers()
+      }, 33)
+
       setPreviewOpen(true) // Abre el diálogo de previsualización en lugar de enviar directamente
     }
   })
@@ -129,10 +140,11 @@ export const NewCrossword: React.FC = () => {
         {
           title,
           description,
-          difficulty: difficulty.toUpperCase(),
+          difficulty: difficulty.toUpperCase() as iDifficulty,
           time_limit,
-          topic: topic.toUpperCase(),
-          data: formattedData
+          topic: topic.toUpperCase() as iTopic,
+          data: formattedData as { [key: string]: string },
+          filled_crossword: window.localStorage.getItem(storageKey)
         }
       ])
 
@@ -153,15 +165,20 @@ export const NewCrossword: React.FC = () => {
 
   const handleAddClue = (type: 'across' | 'down') => {
     const newClue: Clue = { clue: '', answer: '', row: 0, col: 0 }
-    type === 'across'
-      ? setAcrossClues([...acrossClues, newClue])
-      : setDownClues([...downClues, newClue])
+
+    if (type === 'across') {
+      setAcrossClues([...acrossClues, newClue])
+    } else {
+      setDownClues([...downClues, newClue])
+    }
   }
 
   const handleRemoveClue = (type: 'across' | 'down', index: number) => {
-    type === 'across'
-      ? setAcrossClues(acrossClues.filter((_, i) => i !== index))
-      : setDownClues(downClues.filter((_, i) => i !== index))
+    if (type === 'across') {
+      setAcrossClues(acrossClues.filter((_, i) => i !== index))
+    } else {
+      setDownClues(downClues.filter((_, i) => i !== index))
+    }
   }
 
   const handleClueChange = (
@@ -180,16 +197,18 @@ export const NewCrossword: React.FC = () => {
             }
           : clue
       )
-    type === 'across'
-      ? setAcrossClues(updateClues(acrossClues))
-      : setDownClues(updateClues(downClues))
+
+    if (type === 'across') {
+      setAcrossClues(updateClues(acrossClues))
+    } else {
+      setDownClues(updateClues(downClues))
+    }
   }
 
   return (
     <Container
       component='main'
-      maxWidth='md'
-      className='nes-container is-white bg-white'
+      className='nes-container is-white bg-white max-w-[96%] mb-20'
     >
       <Box
         sx={{
@@ -453,6 +472,8 @@ export const NewCrossword: React.FC = () => {
           </Typography>
           <Box sx={{ mt: 3 }}>
             <Crossword
+              ref={crosswordRef}
+              storageKey={storageKey}
               data={{
                 across: Object.fromEntries(
                   acrossClues.map((clue, i) => [

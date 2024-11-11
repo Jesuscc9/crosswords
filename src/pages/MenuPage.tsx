@@ -21,7 +21,7 @@ export const MenuPage: React.FC = () => {
             </div>
 
             <div>
-              <i className='nes-charmander'></i>
+              <i className='nes-kirby'></i>
             </div>
           </Box>
         </section>

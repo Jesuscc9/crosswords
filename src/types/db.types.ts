@@ -16,6 +16,7 @@ export type Database = {
           data: Json | null
           description: string | null
           difficulty: Database["public"]["Enums"]["crossword_difficulty"]
+          filled_crossword: Json | null
           id: number
           is_public: boolean | null
           status: string | null
@@ -30,6 +31,7 @@ export type Database = {
           data?: Json | null
           description?: string | null
           difficulty: Database["public"]["Enums"]["crossword_difficulty"]
+          filled_crossword?: Json | null
           id?: number
           is_public?: boolean | null
           status?: string | null
@@ -44,6 +46,7 @@ export type Database = {
           data?: Json | null
           description?: string | null
           difficulty?: Database["public"]["Enums"]["crossword_difficulty"]
+          filled_crossword?: Json | null
           id?: number
           is_public?: boolean | null
           status?: string | null
@@ -172,6 +175,7 @@ export type Database = {
           created_at: string
           crossword_id: number | null
           current_answers: Json | null
+          failed: boolean | null
           id: number
           last_accessed: string | null
           profile_id: string | null
@@ -182,6 +186,7 @@ export type Database = {
           created_at?: string
           crossword_id?: number | null
           current_answers?: Json | null
+          failed?: boolean | null
           id?: number
           last_accessed?: string | null
           profile_id?: string | null
@@ -192,6 +197,7 @@ export type Database = {
           created_at?: string
           crossword_id?: number | null
           current_answers?: Json | null
+          failed?: boolean | null
           id?: number
           last_accessed?: string | null
           profile_id?: string | null

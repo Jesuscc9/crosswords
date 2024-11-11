@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react'
 import {
   Box,
-  Button,
   Typography,
   Dialog,
   DialogContent,
   DialogActions
 } from '@mui/material'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import { theme } from '../components/Theme'
 import useSession from '../hooks/useSession'
+import { getCrosswords } from '../services/getCrosswords'
+import { Database } from '../types/db.types'
+import { getUserProgress } from '../services/getUserProgress'
 
-type Difficulty = 'EASY' | 'MEDIUM' | 'HARD'
-type Topic = 'SCRUM' | 'PMBOK'
+type Difficulty = Database['public']['Enums']['crossword_difficulty']
+type Topic = Database['public']['Enums']['crossword_topic']
 
 const LEVELS_LABELS = {
   EASY: 'Fácil',
@@ -23,37 +25,47 @@ const LEVELS_LABELS = {
 
 const difficulties: Difficulty[] = ['EASY', 'MEDIUM', 'HARD']
 
+type iCrossword = Database['public']['Tables']['crosswords']['Row']
+
 const CrosswordsLevelsMenu: React.FC = () => {
   const { crosswordTopic, crosswordDifficulty } = useParams()
   const { session } = useSession()
 
-  const [levels, setLevels] = useState<number[]>([])
+  const [levels, setLevels] = useState<iCrossword[]>([])
   const [completedLevels, setCompletedLevels] = useState<number[]>([])
   const [showLockedDialog, setShowLockedDialog] = useState(false)
-  const [currentDifficulty, setCurrentDifficulty] = useState(
-    crosswordDifficulty?.toUpperCase() as Difficulty
-  )
+  const currentDifficulty = crosswordDifficulty?.toUpperCase() as Difficulty
+
+  const [progressByCrossword, setProgressByCrossword] = useState({})
+
   const [usedCluesByCrossword, setUsedCluesByCrossword] = useState({})
   const [tutorialCompleted, setTutorialCompleted] = useState(false)
   const navigate = useNavigate()
 
+  const [isFetchingLevels, setIsFetchingLevels] = useState(false)
+  const [isFetchingTutorial, setIsFetchingTutorial] = useState(false)
+
   useEffect(() => {
     if (!session) return
+    if (!crosswordTopic) return
+    if (!currentDifficulty) return
 
-    const fetchLevels = async () => {
-      const { data, error } = await supabase
-        .from('crosswords')
-        .select('*')
-        .eq('difficulty', currentDifficulty.toUpperCase())
-        .eq('topic', crosswordTopic?.toUpperCase())
+    setIsFetchingLevels(true)
+
+    const fetchCrosswordsByTopicAndDifficulty = async () => {
+      const { data, error } = await getCrosswords({
+        difficulty: currentDifficulty,
+        topic: crosswordTopic as Topic
+      })
 
       if (error) console.error('Error fetching levels:', error)
       else {
-        setLevels(data.map((level) => level.id))
+        setLevels(data)
+        setIsFetchingLevels(false)
       }
     }
 
-    const fetchTutorial = async () => {
+    const checkIfTutorialCompleted = async () => {
       const { data, error } = await supabase
         .from('learning_progress')
         .select('*')
@@ -65,63 +77,39 @@ const CrosswordsLevelsMenu: React.FC = () => {
       if (error) console.error('Error fetching tutorial:', error)
       else {
         setTutorialCompleted(data.length > 0)
+        setIsFetchingTutorial(false)
       }
     }
 
-    fetchLevels()
-    fetchTutorial()
+    fetchCrosswordsByTopicAndDifficulty()
+    checkIfTutorialCompleted()
   }, [currentDifficulty, crosswordTopic, session])
 
   useEffect(() => {
     if (!session) return
 
     const fetchProgress = async () => {
-      const { data: usedCluesData, error: usedCluesError } = await supabase
-        .from('user_used_clues')
-        .select('*')
-        .eq('profile_id', session?.user.id)
+      const { data, error } = await getUserProgress(session.user.id)
 
-      if (usedCluesError) {
-        console.error('Error fetching used clues:', usedCluesError)
-        return
-      }
-
-      setUsedCluesByCrossword(
-        Object.groupBy(usedCluesData, ({ crossword_id }) => crossword_id)
+      setProgressByCrossword(
+        Object.groupBy(data, ({ crossword_id }) => crossword_id)
       )
-
-      console.log({ usedCluesByCrossword, usedCluesData })
-
-      const { data, error } = await supabase
-        .from('user_progress')
-        .select('*')
-        .eq('profile_id', session?.user.id)
-
-      if (error) {
-        console.error('Error fetching user progress:', error)
-      } else {
-        const completedFilter = data.filter((e) => {
-          return e.completed
-        })
-
-        setCompletedLevels(completedFilter.map((level) => level.crossword_id))
-      }
     }
 
+    const fetchUsedClues = async () => {
+      const { data, error } = await supabase
+        .from('user_used_clues')
+        .select('*')
+        .eq('profile_id', session.user.id)
+
+      setUsedCluesByCrossword(
+        Object.groupBy(data, ({ crossword_id }) => crossword_id)
+      )
+    }
+
+    fetchUsedClues()
     fetchProgress()
   }, [session])
-
-  // const handleLevelClick = (level: number) => {
-  //   if (
-  //     level === 0 ||
-  //     completedLevels.includes(level) ||
-  //     completedLevels.includes(level - 1)
-  //   ) {
-  //     navigate(`/crossword/${topic}/${currentDifficulty}/${level}`)
-  //   } else {
-  //     setShowLockedDialog(true)
-  //   }
-  // }
 
   const handleLevelClick = (crosswordId?: number) => {
     if (!crosswordId) {
@@ -141,7 +129,11 @@ const CrosswordsLevelsMenu: React.FC = () => {
     const currentIndex = difficulties.indexOf(currentDifficulty)
     const newIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1
     if (newIndex >= 0 && newIndex < difficulties.length) {
-      setCurrentDifficulty(difficulties[newIndex])
+      navigate(
+        `/app/crosswords/${crosswordTopic}/${difficulties[
+          newIndex
+        ].toLowerCase()}/levels`
+      )
     }
   }
 
@@ -149,6 +141,7 @@ const CrosswordsLevelsMenu: React.FC = () => {
     <>
       <Box
         className='nes-container !px-4 md:!px-16 !py-8 is-rounded !mt-10 w-[1200px] !mx-auto max-w-[96%]'
+        mb={20}
         sx={{ textAlign: 'center', backgroundColor: '#f8e6d4' }}
       >
         <Typography variant='h4' className='nes-text' gutterBottom>
@@ -180,7 +173,7 @@ const CrosswordsLevelsMenu: React.FC = () => {
               justifyContent: 'space-between',
               alignItems: 'center',
               cursor: 'pointer',
-              height: '120px'
+              height: '100%'
             }}
             onClick={() => handleLevelClick()}
           >
@@ -198,12 +191,15 @@ const CrosswordsLevelsMenu: React.FC = () => {
           </Box>
 
           {levels.map((level, index) => {
-            // const isCompleted = completedLevels.includes(level)
-            // const isUnlocked =
-            //   index === 0 || completedLevels.includes(level - 1)
-
-            const isCompleted = false
             const isUnlocked = true
+
+            const isInProgress = progressByCrossword[level.id] !== undefined
+
+            const isFailed = progressByCrossword[level.id]?.[0].failed
+
+            const isCompleted =
+              completedLevels.includes(level.id) ||
+              progressByCrossword[level.id]?.[0].failed
 
             return (
               <Box
@@ -211,7 +207,7 @@ const CrosswordsLevelsMenu: React.FC = () => {
                 className={`nes-btn is-primary ${
                   !tutorialCompleted && 'is-disabled'
                 }`}
-                onClick={() => handleLevelClick(level)}
+                onClick={() => handleLevelClick(level.id)}
                 sx={{
                   padding: 2,
                   borderRadius: '8px',
@@ -219,32 +215,41 @@ const CrosswordsLevelsMenu: React.FC = () => {
                   flexDirection: 'column',
                   alignItems: 'center',
                   cursor: isUnlocked ? 'pointer' : 'default',
-                  height: '120px',
+                  height: '100%',
                   justifyContent: 'space-between'
                 }}
               >
                 <Typography variant='h6' color='white' gutterBottom>
                   {index + 1}
                 </Typography>
+                {isInProgress && !isCompleted && (
+                  <Box display='flex' flexDirection='row'>
+                    <div className='whitespace-nowrap !text-xs text-left opacity-50'>
+                      En progreso
+                    </div>
+                  </Box>
+                )}
+                {isFailed && (
+                  <Box display='flex' flexDirection='row'>
+                    <div className='whitespace-nowrap !text-xs text-left opacity-50'>
+                      Tiempo agotado
+                    </div>
+                  </Box>
+                )}
+
                 <Box display='flex' flexDirection='row'>
                   {[...Array(3)].map((_, starIndex) => {
-                    const isCompleted = completedLevels.includes(level)
+                    const isCompleted =
+                      completedLevels.includes(level.id) ||
+                      progressByCrossword[level.id]?.[0].failed
 
-                    const cluesUsed = usedCluesByCrossword[level]?.length || 0
+                    const cluesUsed = progressByCrossword[level.id]?.[0].failed
+                      ? 3
+                      : usedCluesByCrossword[level.id]?.length
 
                     const score = 3 - cluesUsed
 
                     const starIsFilled = starIndex < score
-                    console.log({
-                      starIndex,
-                      level,
-                      usedCluesByCrossword,
-                      cluesUsed,
-                      score,
-                      starIsFilled,
-                      isCompleted,
-                      completedLevels
-                    })
                     return (
                       <i
                         key={starIndex}
