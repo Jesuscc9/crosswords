@@ -5,6 +5,7 @@ import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import RegisterImageBg from '../assets/loginbg.avif'
 import 'nes.css/css/nes.min.css'
+import { AppLayout } from '../components/AppLayout'
 
 interface iSignupForm {
   username: string
@@ -63,17 +64,7 @@ export default function Register() {
   })
 
   return (
-    <div
-      style={{
-        width: '100vw',
-        height: '100vh',
-        display: 'flex',
-        backgroundImage: `url('${RegisterImageBg}')`,
-        backgroundSize: 'cover',
-        backgroundRepeat: 'repeat'
-      }}
-      className='items-start'
-    >
+    <AppLayout isPublic={true}>
       <div
         className='nes-container bg-yellow-500 max-w-[96%]'
         style={{
@@ -228,6 +219,6 @@ export default function Register() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   )
 }

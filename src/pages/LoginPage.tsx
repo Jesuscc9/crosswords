@@ -5,6 +5,7 @@ import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import LoginImageBg from '../assets/loginbg.avif'
 import 'nes.css/css/nes.min.css'
+import { AppLayout } from '../components/AppLayout'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -48,17 +49,7 @@ export default function Login() {
   })
 
   return (
-    <div
-      style={{
-        width: '100vw',
-        height: '100vh',
-        display: 'flex',
-        backgroundImage: `url('${LoginImageBg}')`,
-        backgroundSize: 'cover',
-        backgroundRepeat: 'repeat'
-      }}
-      className='items-start'
-    >
+    <AppLayout isPublic={true}>
       <div
         className='nes-container bg-yellow-500 max-w-[96%]'
         style={{
@@ -149,14 +140,6 @@ export default function Login() {
           </p>
         </div>
       </div>
-
-      {/* <div style={{ position: 'absolute', zIndex: 0 }}>
-        <img
-          src={LoginImageBg}
-          alt=''
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      </div> */}
-    </div>
+    </AppLayout>
   )
 }

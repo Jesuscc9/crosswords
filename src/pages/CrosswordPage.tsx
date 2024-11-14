@@ -87,6 +87,11 @@ export default function CrosswordPage() {
     [crosswordId, session?.user]
   )
 
+  const solvedStorageKey = useMemo(
+    () => `solved-crossword-${crosswordId}-${session?.user.id}`,
+    [crosswordId, session?.user]
+  )
+
   useEffect(() => {
     if (!crosswordTopic || !crosswordDifficulty || !crosswordId) {
       setShowNotFoundRoute(true)
@@ -117,84 +122,99 @@ export default function CrosswordPage() {
     fetchCrossword()
   }, [crosswordId, crosswordDifficulty, crosswordTopic])
 
+  const fetchLastProgress = useCallback(async () => {
+    if (!session) return
+
+    console.log('holaaaaa')
+
+    setIsFetchingLastProgress(true)
+    const { data, error } = await supabase
+      .from('user_progress')
+      .select('*')
+      .eq('crossword_id', Number(crosswordId))
+      .eq('profile_id', session?.user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Error al cargar el progreso del crucigrama:', error)
+    } else {
+      console.log({ data })
+      if (data !== null) {
+        crosswordRef.current?.reset()
+        localStorage.removeItem(storageKey)
+
+        setUserProgress(data)
+        setPrevProgressId(data.id)
+        const prevProgress = data.current_answers as string
+
+        console.log({ prevProgress })
+
+        const parsedProgress = JSON.parse(prevProgress)
+
+        console.log({ parsedProgress })
+
+        if (!parsedProgress?.guesses && prevProgress !== null) {
+          setValidGuesses(false)
+          setIsFetchingLastProgress(false)
+          return
+        }
+
+        console.log({ parsedProgress })
+
+        if (parsedProgress?.guesses) {
+          console.log({ parsedProgress })
+          localStorage.setItem(storageKey, JSON.stringify(parsedProgress))
+        }
+
+        setIsCompleted(data?.completed || false)
+        setFailed(data?.failed || false)
+
+        if (data.time_spent === crosswordData?.time_limit) {
+          setTimeExpired(true)
+          setDisplayTimeSpent(0)
+        } else {
+          const fetchedTimeSpent = data.time_spent
+            ? intervalToSeconds(data.time_spent as string)
+            : 0
+          setDisplayTimeSpent(fetchedTimeSpent)
+          setDbUpdateTimeSpent(fetchedTimeSpent)
+        }
+
+        console.log('hola')
+        setValidGuesses(true)
+      } else {
+        // if user do not have previous progress, we create a new one with default values
+        await supabase.from('user_progress').insert([
+          {
+            crossword_id: Number(crosswordId),
+            profile_id: session?.user.id,
+            time_spent: '00:00:00',
+            failed: false,
+            completed: false
+          }
+        ])
+        fetchLastProgress()
+      }
+    }
+
+    setIsFetchingLastProgress(false)
+  }, [crosswordId, session, storageKey, crosswordData])
+
   useEffect(() => {
     if (!session) return
     if (!crosswordData) return
 
-    setIsFetchingLastProgress(true)
-
-    const fetchLastProgress = async () => {
-      const { data, error } = await supabase
-        .from('user_progress')
-        .select('*')
-        .eq('crossword_id', Number(crosswordId))
-        .eq('profile_id', session?.user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-      if (error) {
-        console.error('Error al cargar el progreso del crucigrama:', error)
-      } else {
-        console.log({ data })
-        if (data !== null) {
-          setUserProgress(data)
-          setPrevProgressId(data.id)
-          const prevProgress = data.current_answers as string
-
-          console.log({ prevProgress })
-
-          const parsedProgress = JSON.parse(prevProgress)
-
-          console.log({ parsedProgress })
-
-          if (!parsedProgress?.guesses && prevProgress !== null) {
-            setValidGuesses(false)
-            setIsFetchingLastProgress(false)
-            return
-          }
-
-          console.log({ parsedProgress })
-
-          if (parsedProgress?.guesses) {
-            localStorage.setItem(storageKey, parsedProgress)
-          }
-
-          setIsCompleted(data?.completed || false)
-          setFailed(data?.failed || false)
-
-          if (data.time_spent === crosswordData?.time_limit) {
-            setTimeExpired(true)
-            setDisplayTimeSpent(0)
-          } else {
-            const fetchedTimeSpent = data.time_spent
-              ? intervalToSeconds(data.time_spent as string)
-              : 0
-            setDisplayTimeSpent(fetchedTimeSpent)
-            setDbUpdateTimeSpent(fetchedTimeSpent)
-          }
-
-          setValidGuesses(true)
-        } else {
-          // if user do not have previous progress, we create a new one with default values
-          await supabase.from('user_progress').insert([
-            {
-              crossword_id: Number(crosswordId),
-              profile_id: session?.user.id,
-              time_spent: '00:00:00',
-              failed: false,
-              completed: false
-            }
-          ])
-          fetchLastProgress()
-        }
-      }
-
-      setIsFetchingLastProgress(false)
-    }
-
     fetchLastProgress()
-  }, [crosswordId, session, storageKey, crosswordData, timeExpired])
+  }, [
+    crosswordId,
+    session,
+    storageKey,
+    crosswordData,
+    timeExpired,
+    fetchLastProgress
+  ])
 
   useEffect(() => {
     if (!session) return
@@ -300,7 +320,9 @@ export default function CrosswordPage() {
   const handleUpdateCrosswordProgress = useCallback(async () => {
     if (!session) return
 
-    const data = window.localStorage.getItem(storageKey)
+    console.log('handleUpdateCrosswordProgress')
+
+    const data = localStorage.getItem(storageKey)
 
     const { data: updated } = await supabase
       .from('user_progress')
@@ -309,7 +331,7 @@ export default function CrosswordPage() {
           id: prevProgressId ?? undefined,
           crossword_id: Number(crosswordId),
           profile_id: session?.user.id,
-          current_answers: JSON.stringify(data)
+          current_answers: data
         },
         {
           onConflict: 'id'
@@ -318,14 +340,15 @@ export default function CrosswordPage() {
       .select()
 
     if (updated !== null && updated?.length > 0) {
+      console.log({ updated })
+
       const currentAnswers = JSON.parse(updated[0]?.current_answers as string)
 
       if (!currentAnswers?.guesses) return
 
-      localStorage.setItem(
-        storageKey,
-        JSON.parse(updated[0]?.current_answers as string)
-      )
+      console.log({ currentAnswers })
+
+      localStorage.setItem(storageKey, updated[0]?.current_answers as string)
     }
   }, [session, storageKey, prevProgressId, crosswordId])
 
@@ -340,7 +363,6 @@ export default function CrosswordPage() {
       .delete()
       .eq('crossword_id', Number(crosswordId))
       .eq('profile_id', session.user.id)
-    localStorage.removeItem(storageKey)
 
     // Reinicia el tiempo en la base de datos
     setDbUpdateTimeSpent(0)
@@ -349,6 +371,8 @@ export default function CrosswordPage() {
     setTimeExpired(false)
     setFailed(false)
     setUsedClues([])
+
+    fetchLastProgress()
   }
 
   const handleCrosswordCorrect = async () => {
@@ -372,37 +396,38 @@ export default function CrosswordPage() {
     if (!session?.user.id) return
     if (!crosswordId) return
 
-    if (3 < 1) return
+    solvedCrosswordRef.current?.fillAllAnswers()
 
-    const currentProgress = JSON.parse(localStorage.getItem(storageKey))
-    const filledCrossword = JSON.parse(crosswordData?.filled_crossword)
+    const solvedData = JSON.parse(
+      localStorage.getItem(solvedStorageKey) as string
+    )
 
-    console.log('currentProgress:', currentProgress)
-    console.log('filledCrossword:', filledCrossword)
+    const currentProgress = JSON.parse(
+      localStorage.getItem(storageKey) as string
+    )
 
-    // const targetCells = Object.keys(filledCrossword?.guesses)
+    const targetCellsKeys = Object.keys(solvedData?.guesses)
 
-    // const discrepanciesKeys = targetCells.filter(
-    //   (cell) =>
-    //     currentProgress?.guesses[cell] !== filledCrossword?.guesses[cell]
-    // )
+    const discrepanciesKeys = targetCellsKeys.filter(
+      (cell) => currentProgress?.guesses[cell] !== solvedData?.guesses[cell]
+    )
 
-    // console.log(discrepanciesKeys)
+    console.log(discrepanciesKeys)
 
-    // const randomDiscrepancyIndex = Math.random() * discrepanciesKeys.length
+    const randomDiscrepancyIndex = Math.random() * discrepanciesKeys.length
 
-    // const randomDiscrepancyKey =
-    //   discrepanciesKeys[Math.floor(randomDiscrepancyIndex)]
+    const randomDiscrepancyKey =
+      discrepanciesKeys[Math.floor(randomDiscrepancyIndex)]
 
-    // const randomDiscrepancyValue = filledCrossword.guesses[randomDiscrepancyKey]
+    const randomDiscrepancyValue = solvedData.guesses[randomDiscrepancyKey]
 
-    // const [col, _, row] = randomDiscrepancyKey
+    const [col, _, row] = randomDiscrepancyKey
 
-    // crosswordRef.current?.setGuess(
-    //   Number(col),
-    //   Number(row),
-    //   randomDiscrepancyValue
-    // )
+    crosswordRef.current?.setGuess(
+      Number(col),
+      Number(row),
+      randomDiscrepancyValue
+    )
 
     const { data, error } = await supabase
       .from('user_used_clues')
@@ -499,6 +524,13 @@ export default function CrosswordPage() {
               alignItems='center'
               justifyContent='space-between'
             >
+              <button
+                className='nes-btn is-primary'
+                onClick={handleRestartLevel}
+              >
+                Reiniciar
+              </button>
+
               <Box flexDirection='row-reverse' display='flex'>
                 {[...Array(3)].map((_, index) => {
                   const usedCluesCount = usedClues.length
@@ -553,20 +585,13 @@ export default function CrosswordPage() {
                       highlightBackground: 'orange'
                     }}
                   />
-                  <div className='hidden'>
+                  <div className='-z-10 invisble pointer-events-none absolute opacity-0'>
                     <Crossword
-                      onCrosswordCorrect={handleCrosswordCorrect}
-                      key={storageKey + 'sample-filled'}
+                      key={solvedStorageKey}
                       data={crosswordData.data as CluesInputOriginal}
                       useStorage
-                      storageKey={storageKey + 'sample-filled'}
-                      ref={crosswordRef}
-                      acrossLabel='Horizontal'
-                      downLabel='Vertical'
-                      onCellChange={debouncedUpdateProgress}
-                      theme={{
-                        highlightBackground: 'orange'
-                      }}
+                      storageKey={solvedStorageKey}
+                      ref={solvedCrosswordRef}
                     />
                   </div>
                 </>
@@ -718,16 +743,22 @@ export default function CrosswordPage() {
             <Typography>Has completado el crucigrama. ¡Bien hecho!</Typography>
           </DialogContent>
           <DialogActions>
-            <Stack direction='row' justifyContent='end' width='100%'>
+            <Stack direction='row' justifyContent='space-between' width='100%'>
               <button
-                className='nes-btn is-primary'
+                className='nes-btn is-secondary'
                 onClick={() =>
                   navigate(
                     `/app/crosswords/${crosswordTopic}/${crosswordDifficulty}/levels`
                   )
                 }
               >
-                Continuar
+                Aceptar
+              </button>
+              <button
+                className='nes-btn is-primary'
+                onClick={handleRestartLevel}
+              >
+                Reiniciar
               </button>
             </Stack>
           </DialogActions>

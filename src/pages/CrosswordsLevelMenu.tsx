@@ -304,9 +304,7 @@ const CrosswordsLevelsMenu: React.FC = () => {
           </button>
           <button
             className={`nes-btn is-success ${
-              difficulties.indexOf(currentDifficulty) === -1
-                ? 'is-disabled'
-                : ''
+              difficulties.indexOf(currentDifficulty) === 2 ? 'is-disabled' : ''
             }`}
             onClick={() => changeDifficulty('next')}
             disabled={

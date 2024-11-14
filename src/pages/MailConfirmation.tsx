@@ -38,7 +38,7 @@ export default function MailConfirmation() {
             <Button
               variant='contained'
               color='primary'
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/')}
               fullWidth
               size='large'
             >
