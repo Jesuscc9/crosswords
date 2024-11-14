@@ -15,7 +15,6 @@ import {
 import { ErrorDialog } from '../components/ErrorDialog'
 import { supabase } from '../services/supabase'
 import Crossword, {
-  CrosswordImperative,
   CrosswordProviderImperative
 } from '@jaredreisinger/react-crossword'
 import useLocalStorage from '../hooks/useLocalStorage'
@@ -60,6 +59,9 @@ export default function CrosswordPage() {
     'showInstructions',
     true
   )
+
+  const [validGuesses, setValidGuesses] = useState<boolean>(false)
+
   const [userProgress, setUserProgress] =
     useState<Database['public']['Tables']['user_progress']['Row']>()
   const [isCompleted, setIsCompleted] = useState(false)
@@ -78,6 +80,7 @@ export default function CrosswordPage() {
   const [timeExpired, setTimeExpired] = useState(false) // Estado para controlar el diálogo de tiempo agotado
   const [failed, setFailed] = useState(false) // Estado para controlar el diálogo de tiempo agotado
   const crosswordRef = useRef<CrosswordProviderImperative>(null)
+  const solvedCrosswordRef = useRef<CrosswordProviderImperative>(null)
 
   const storageKey = useMemo(
     () => `crossword-${crosswordId}-${session?.user.id}`,
@@ -133,12 +136,28 @@ export default function CrosswordPage() {
       if (error) {
         console.error('Error al cargar el progreso del crucigrama:', error)
       } else {
-        if (data) {
+        console.log({ data })
+        if (data !== null) {
           setUserProgress(data)
           setPrevProgressId(data.id)
           const prevProgress = data.current_answers as string
-          if (prevProgress !== null) {
-            window.localStorage.setItem(storageKey, JSON.parse(prevProgress))
+
+          console.log({ prevProgress })
+
+          const parsedProgress = JSON.parse(prevProgress)
+
+          console.log({ parsedProgress })
+
+          if (!parsedProgress?.guesses && prevProgress !== null) {
+            setValidGuesses(false)
+            setIsFetchingLastProgress(false)
+            return
+          }
+
+          console.log({ parsedProgress })
+
+          if (parsedProgress?.guesses) {
+            localStorage.setItem(storageKey, parsedProgress)
           }
 
           setIsCompleted(data?.completed || false)
@@ -154,6 +173,8 @@ export default function CrosswordPage() {
             setDisplayTimeSpent(fetchedTimeSpent)
             setDbUpdateTimeSpent(fetchedTimeSpent)
           }
+
+          setValidGuesses(true)
         } else {
           // if user do not have previous progress, we create a new one with default values
           await supabase.from('user_progress').insert([
@@ -235,7 +256,7 @@ export default function CrosswordPage() {
   useEffect(() => {
     if (!timeLimit) return
 
-    if (userProgress?.failed) return
+    if (userProgress?.failed || userProgress?.completed) return
 
     const dbUpdateInterval = setInterval(() => {
       setDbUpdateTimeSpent((prevTime) => {
@@ -297,7 +318,11 @@ export default function CrosswordPage() {
       .select()
 
     if (updated !== null && updated?.length > 0) {
-      window.localStorage.setItem(
+      const currentAnswers = JSON.parse(updated[0]?.current_answers as string)
+
+      if (!currentAnswers?.guesses) return
+
+      localStorage.setItem(
         storageKey,
         JSON.parse(updated[0]?.current_answers as string)
       )
@@ -330,51 +355,54 @@ export default function CrosswordPage() {
     if (!prevProgressId) return
     if (isCompleted) return
 
+    const isCorrect = crosswordRef.current?.isCrosswordCorrect()
+
+    if (!isCorrect) return
+
     setIsCompleted(true)
     await supabase
       .from('user_progress')
-      .update({ completed: true })
+      .update({ completed: true, failed: false })
       .eq('id', prevProgressId)
+
+    localStorage.removeItem(storageKey)
   }
 
   const handleRevealClue = async () => {
     if (!session?.user.id) return
     if (!crosswordId) return
 
-    const currentProgress = JSON.parse(window.localStorage.getItem(storageKey))
+    if (3 < 1) return
+
+    const currentProgress = JSON.parse(localStorage.getItem(storageKey))
     const filledCrossword = JSON.parse(crosswordData?.filled_crossword)
 
     console.log('currentProgress:', currentProgress)
     console.log('filledCrossword:', filledCrossword)
 
-    const targetCells = Object.keys(filledCrossword.guesses)
+    // const targetCells = Object.keys(filledCrossword?.guesses)
 
-    const discrepanciesKeys = targetCells.filter(
-      (cell) => currentProgress.guesses[cell] !== filledCrossword.guesses[cell]
-    )
+    // const discrepanciesKeys = targetCells.filter(
+    //   (cell) =>
+    //     currentProgress?.guesses[cell] !== filledCrossword?.guesses[cell]
+    // )
 
-    console.log(discrepanciesKeys)
+    // console.log(discrepanciesKeys)
 
-    const randomDiscrepancyIndex = Math.random() * discrepanciesKeys.length
+    // const randomDiscrepancyIndex = Math.random() * discrepanciesKeys.length
 
-    const randomDiscrepancyKey =
-      discrepanciesKeys[Math.floor(randomDiscrepancyIndex)]
+    // const randomDiscrepancyKey =
+    //   discrepanciesKeys[Math.floor(randomDiscrepancyIndex)]
 
-    console.log('randomDiscrepancyKey:', randomDiscrepancyKey)
-    console.log(
-      'randomDiscrepancyValue:',
-      filledCrossword.guesses[randomDiscrepancyKey]
-    )
+    // const randomDiscrepancyValue = filledCrossword.guesses[randomDiscrepancyKey]
 
-    const randomDiscrepancyValue = filledCrossword.guesses[randomDiscrepancyKey]
+    // const [col, _, row] = randomDiscrepancyKey
 
-    const [col, _, row] = randomDiscrepancyKey
-
-    crosswordRef.current?.setGuess(
-      Number(col),
-      Number(row),
-      randomDiscrepancyValue
-    )
+    // crosswordRef.current?.setGuess(
+    //   Number(col),
+    //   Number(row),
+    //   randomDiscrepancyValue
+    // )
 
     const { data, error } = await supabase
       .from('user_used_clues')
@@ -437,6 +465,8 @@ export default function CrosswordPage() {
   // Calcula el tiempo restante en segundos
   const timeRemaining =
     timeLimit !== null ? Math.max(0, timeLimit - displayTimeSpent) : 0
+
+  solvedCrosswordRef?.current?.fillAllAnswers()
 
   return (
     <Container
@@ -507,20 +537,40 @@ export default function CrosswordPage() {
                 }
               }}
             >
-              <Crossword
-                onCrosswordCorrect={handleCrosswordCorrect}
-                key={storageKey}
-                data={crosswordData.data as CluesInputOriginal}
-                useStorage
-                storageKey={storageKey}
-                ref={crosswordRef}
-                acrossLabel='Horizontal'
-                downLabel='Vertical'
-                onCellChange={debouncedUpdateProgress}
-                theme={{
-                  highlightBackground: 'orange'
-                }}
-              />
+              {validGuesses ? (
+                <>
+                  <Crossword
+                    onCrosswordCorrect={handleCrosswordCorrect}
+                    key={storageKey}
+                    data={crosswordData.data as CluesInputOriginal}
+                    useStorage
+                    storageKey={storageKey}
+                    ref={crosswordRef}
+                    acrossLabel='Horizontal'
+                    downLabel='Vertical'
+                    onCellChange={debouncedUpdateProgress}
+                    theme={{
+                      highlightBackground: 'orange'
+                    }}
+                  />
+                  <div className='hidden'>
+                    <Crossword
+                      onCrosswordCorrect={handleCrosswordCorrect}
+                      key={storageKey + 'sample-filled'}
+                      data={crosswordData.data as CluesInputOriginal}
+                      useStorage
+                      storageKey={storageKey + 'sample-filled'}
+                      ref={crosswordRef}
+                      acrossLabel='Horizontal'
+                      downLabel='Vertical'
+                      onCellChange={debouncedUpdateProgress}
+                      theme={{
+                        highlightBackground: 'orange'
+                      }}
+                    />
+                  </div>
+                </>
+              ) : null}
             </Box>
             <Box sx={{ mt: 4, display: 'flex', gap: 2 }} flexWrap='wrap'>
               <button

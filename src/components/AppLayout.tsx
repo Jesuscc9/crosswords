@@ -1,6 +1,6 @@
 import { Box, Grid2 } from '@mui/material'
 import { Navbar } from './Navbar'
-import AppBg from '../assets/appbg.png'
+import AppBg from '../assets/bg3.png'
 import React from 'react'
 
 export const AppLayout = ({ children }: { children: React.ReactNode }) => {

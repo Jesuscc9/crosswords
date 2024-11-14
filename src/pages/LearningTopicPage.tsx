@@ -38,6 +38,7 @@ export default function LearningTopicPage() {
 
   const [currentStep, setCurrentStep] = React.useState(0)
   const [stepRevealChar, setStepRevealChar] = React.useState(0)
+  const intervalIdRef = React.useRef<number>(null)
 
   const handleComplete = async () => {
     if (!session || !crosswordTopic || !crosswordDifficulty) return
@@ -76,13 +77,15 @@ export default function LearningTopicPage() {
     if (!learningData[crosswordTopic.toUpperCase()][currentStep]?.content)
       return
 
-    const intervalId = setInterval(() => {
+    clearInterval(intervalIdRef?.current ?? 0)
+
+    intervalIdRef.current = setInterval(() => {
       setStepRevealChar((prev) => prev + 1)
       if (
         stepRevealChar >=
         learningData[crosswordTopic.toUpperCase()][currentStep].content.length
       ) {
-        clearInterval(intervalId)
+        clearInterval(intervalIdRef.current)
       }
     }, 33)
   }, [currentStep])

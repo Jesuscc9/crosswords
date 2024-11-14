@@ -21,7 +21,7 @@ export const MenuPage: React.FC = () => {
             </div>
 
             <div>
-              <i className='nes-kirby'></i>
+              <i className='nes-kirby transform scale-150 top-10'></i>
             </div>
           </Box>
         </section>
