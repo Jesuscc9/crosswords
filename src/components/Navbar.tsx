@@ -7,7 +7,8 @@ import {
   IconButton,
   Box,
   Stack,
-  Tooltip
+  Tooltip,
+  useColorScheme
 } from '@mui/material'
 import { Link } from 'react-router-dom'
 import AccountCircle from '@mui/icons-material/AccountCircle'
@@ -17,8 +18,9 @@ import useSession from '../hooks/useSession'
 import MuiAppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
 import styled from '@mui/material/styles/styled'
-import { KeyboardArrowDown } from '@mui/icons-material'
+import { DarkModeOutlined, KeyboardArrowDown } from '@mui/icons-material'
 import useProfile from '../hooks/useProfile'
+import { FormControl, InputLabel, Select } from '@mui/material'
 
 const AppBar = styled(MuiAppBar)(({ theme }) => ({
   opacity: 0.9,
@@ -104,6 +106,12 @@ export const Navbar = () => {
       pages.filter((page) => (page.role ? page.role.includes(userRole) : true)),
     [userRole]
   )
+
+  const { mode, setMode } = useColorScheme()
+
+  const handleThemeChange = (theme: Mode) => {
+    setMode(theme)
+  }
 
   return (
     <AppBar
@@ -226,7 +234,7 @@ export const Navbar = () => {
             size='large'
             onClick={handleOpenNotifications}
           >
-            <Notifications />
+            <DarkModeOutlined />
           </IconButton>
           <Menu
             id='menu-appbar'
@@ -237,9 +245,30 @@ export const Navbar = () => {
             open={Boolean(anchorElNotifications)}
             onClose={handleCloseNotifications}
           >
-            <Box px={4} py={2}>
-              <Typography color='info'>No hay notificaciones</Typography>
-            </Box>
+            <MenuItem
+              value='light'
+              onClick={() => {
+                setMode('light')
+              }}
+            >
+              Claro
+            </MenuItem>
+            <MenuItem
+              value='dark'
+              onClick={() => {
+                setMode('dark')
+              }}
+            >
+              Oscuro
+            </MenuItem>
+            <MenuItem
+              value='system'
+              onClick={() => {
+                setMode('system')
+              }}
+            >
+              Sistema
+            </MenuItem>
           </Menu>
           <Tooltip title='Abrir ajustes'>
             <Button color='inherit' size='large' onClick={handleOpenUserMenu}>

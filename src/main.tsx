@@ -8,7 +8,7 @@ import 'nes.css/css/nes.min.css'
 import { theme } from './components/Theme.tsx'
 
 createRoot(document.getElementById('root')!).render(
-  <ThemeProvider theme={theme}>
+  <ThemeProvider theme={theme} defaultMode='light'>
     <CssBaseline></CssBaseline>
     <RouterProvider router={router}></RouterProvider>
   </ThemeProvider>

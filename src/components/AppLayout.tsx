@@ -1,10 +1,15 @@
 import { Box, Grid2 } from '@mui/material'
 import { Navbar } from './Navbar'
-import AppBg from '../assets/bg3.png'
-import ScrumBG from '../assets/scrumbg.png'
-import PembokBG from '../assets/pembookbg.png'
+import DayScrumBG from '../assets/day-bg-1.webp'
+import NightScrumBG from '../assets/nightbg-1.webp'
+import DayPembokBG from '../assets/daybg2.webp'
+import NightPembokBG from '../assets/nightbg2.webp'
+import PublicBG from '../assets/public-bg-1.webp'
+import DarkPublicBG from '../assets/dark-public-bg.webp'
 import React from 'react'
-import { useLocation } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
+import { useColorScheme } from '@mui/material'
+import useMediaQuery from '@mui/material/useMediaQuery'
 
 export const AppLayout = ({
   children,
@@ -13,13 +18,40 @@ export const AppLayout = ({
   children: React.ReactNode
   isPublic: boolean
 }) => {
-  const { pathname } = useLocation()
+  const { crosswordTopic } = useParams()
+  const { mode } = useColorScheme()
 
-  const bg = pathname.includes('scrum')
-    ? ScrumBG
-    : pathname.includes('pmbok')
-    ? PembokBG
-    : AppBg
+  const backgrounds = {
+    scrum: {
+      light: DayScrumBG,
+      dark: NightScrumBG
+    },
+    pmbok: {
+      light: DayPembokBG,
+      dark: NightPembokBG
+    },
+    public: {
+      light: PublicBG,
+      dark: DarkPublicBG
+    }
+  }
+
+  console.log('mode', mode)
+
+  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)')
+
+  let currentMode = mode
+
+  if (currentMode === 'system') {
+    currentMode = prefersDarkMode ? 'dark' : 'light'
+  } else {
+    currentMode = mode
+  }
+
+  const bg =
+    isPublic || !crosswordTopic
+      ? backgrounds.public[currentMode]
+      : backgrounds[crosswordTopic ?? 'scrum'][currentMode]
 
   return (
     <Grid2
@@ -32,13 +64,20 @@ export const AppLayout = ({
         maxHeight: '100vh',
         width: '100vw',
         maxWidth: '100vw',
-        overflow: 'auto'
+        overflow: 'auto',
+        backgroundPosition: 'center'
       }}
     >
       <Grid2 size={12} zIndex={2} position='fixed'>
         {isPublic === true ? null : <Navbar></Navbar>}
       </Grid2>
-      <Box position='absolute' zIndex={0}>
+      <Box
+        position='absolute'
+        zIndex={0}
+        sx={{
+          opacity: currentMode === 'dark' ? 0.5 : 1
+        }}
+      >
         <div className='clouds'></div>
         <div className='clouds backwards'></div>
       </Box>

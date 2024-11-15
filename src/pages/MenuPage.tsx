@@ -1,7 +1,8 @@
 import React from 'react'
 import 'nes.css/css/nes.min.css'
-import { Box } from '@mui/material'
+import { Box, useTheme } from '@mui/material'
 import { Link } from 'react-router-dom'
+import Typography from '@mui/material/Typography'
 
 export const MenuPage: React.FC = () => {
   return (
@@ -15,13 +16,13 @@ export const MenuPage: React.FC = () => {
             className='message -right'
           >
             <div className='nes-balloon from-right'>
-              <p>
+              <Typography>
                 Selecciona un tema de las opciones para comenzar a aprender!
-              </p>
+              </Typography>
             </div>
 
             <div>
-              <i className='nes-kirby transform scale-150 top-10'></i>
+              <i className='nes-kirby'></i>
             </div>
           </Box>
         </section>
