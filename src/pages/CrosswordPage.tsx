@@ -254,7 +254,10 @@ export default function CrosswordPage() {
               completed: false
             })
             .eq('id', prevProgressId)
-            .then(() => {})
+            .then(() => {
+              setShowSuccessProgressSaved(true)
+              console.log('successssss')
+            })
 
           setDbUpdateTimeSpent(timeLimit)
           return timeLimit
@@ -297,6 +300,8 @@ export default function CrosswordPage() {
         time_spent: secondsToIntervalFormat(dbUpdateTimeSpent)
       })
       .eq('id', prevProgressId)
+
+    setShowSuccessProgressSaved(true)
   }, [dbUpdateTimeSpent, prevProgressId, timeExpired])
 
   // Llama a `updateDbTimeSpent` cada vez que `dbUpdateTimeSpent` cambia, si el tiempo no ha expirado
@@ -330,6 +335,8 @@ export default function CrosswordPage() {
         }
       )
       .select()
+
+    console.log('successssss')
 
     setShowSuccessProgressSaved(true)
 
@@ -491,14 +498,14 @@ export default function CrosswordPage() {
       component='main'
     >
       <Snackbar
-        open={true}
+        open={showSuccessProgressSaved}
         autoHideDuration={3000}
         onClose={handleClose}
         color='success'
 
         // action={action}
       >
-        <Alert onClose={handleClose} severity='success' variant='filled'>
+        <Alert severity='success' variant='filled'>
           Progreso guardado con éxito.
         </Alert>
       </Snackbar>
