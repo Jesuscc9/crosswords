@@ -193,13 +193,19 @@ const CrosswordsLevelsMenu: React.FC = () => {
           {levels.map((level, index) => {
             const isUnlocked = true
 
-            const isInProgress = progressByCrossword[level.id] !== undefined
+            const isInProgress =
+              progressByCrossword[level.id] !== undefined &&
+              progressByCrossword[level.id]?.[0]?.time_spent !== '00:00:00'
+
+            console.log({ progressByCrossword, isInProgress })
 
             const isFailed = progressByCrossword[level.id]?.[0].failed
 
             const isCompleted =
               completedLevels.includes(level.id) ||
               progressByCrossword[level.id]?.[0].failed
+
+            const isNotStarted = !isInProgress && !isCompleted && !isFailed
 
             return (
               <Box
@@ -222,16 +228,23 @@ const CrosswordsLevelsMenu: React.FC = () => {
                 <Typography variant='h6' color='white' gutterBottom>
                   {index + 1}
                 </Typography>
+                {isNotStarted && (
+                  <Box display='flex' flexDirection='row'>
+                    <div className='whitespace-nowrap !text-xs text-left opacity-30'>
+                      Sin iniciar
+                    </div>
+                  </Box>
+                )}
                 {isInProgress && !isCompleted && (
                   <Box display='flex' flexDirection='row'>
-                    <div className='whitespace-nowrap !text-xs text-left opacity-50'>
+                    <div className='whitespace-nowrap !text-xs text-left'>
                       En progreso
                     </div>
                   </Box>
                 )}
                 {isFailed && (
                   <Box display='flex' flexDirection='row'>
-                    <div className='whitespace-nowrap !text-xs text-left opacity-50'>
+                    <div className='whitespace-nowrap !text-xs text-left opacity-70'>
                       Tiempo agotado
                     </div>
                   </Box>

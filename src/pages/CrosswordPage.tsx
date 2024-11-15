@@ -10,7 +10,9 @@ import {
   DialogContent,
   DialogActions,
   debounce,
-  Stack
+  Stack,
+  Snackbar,
+  Alert
 } from '@mui/material'
 import { ErrorDialog } from '../components/ErrorDialog'
 import { supabase } from '../services/supabase'
@@ -82,6 +84,9 @@ export default function CrosswordPage() {
   const crosswordRef = useRef<CrosswordProviderImperative>(null)
   const solvedCrosswordRef = useRef<CrosswordProviderImperative>(null)
 
+  const [showSuccessProgressSaved, setShowSuccessProgressSaved] =
+    useState(false)
+
   const storageKey = useMemo(
     () => `crossword-${crosswordId}-${session?.user.id}`,
     [crosswordId, session?.user]
@@ -125,8 +130,6 @@ export default function CrosswordPage() {
   const fetchLastProgress = useCallback(async () => {
     if (!session) return
 
-    console.log('holaaaaa')
-
     setIsFetchingLastProgress(true)
     const { data, error } = await supabase
       .from('user_progress')
@@ -140,7 +143,6 @@ export default function CrosswordPage() {
     if (error) {
       console.error('Error al cargar el progreso del crucigrama:', error)
     } else {
-      console.log({ data })
       if (data !== null) {
         crosswordRef.current?.reset()
         localStorage.removeItem(storageKey)
@@ -149,11 +151,7 @@ export default function CrosswordPage() {
         setPrevProgressId(data.id)
         const prevProgress = data.current_answers as string
 
-        console.log({ prevProgress })
-
         const parsedProgress = JSON.parse(prevProgress)
-
-        console.log({ parsedProgress })
 
         if (!parsedProgress?.guesses && prevProgress !== null) {
           setValidGuesses(false)
@@ -161,10 +159,7 @@ export default function CrosswordPage() {
           return
         }
 
-        console.log({ parsedProgress })
-
         if (parsedProgress?.guesses) {
-          console.log({ parsedProgress })
           localStorage.setItem(storageKey, JSON.stringify(parsedProgress))
         }
 
@@ -182,7 +177,6 @@ export default function CrosswordPage() {
           setDbUpdateTimeSpent(fetchedTimeSpent)
         }
 
-        console.log('hola')
         setValidGuesses(true)
       } else {
         // if user do not have previous progress, we create a new one with default values
@@ -320,8 +314,6 @@ export default function CrosswordPage() {
   const handleUpdateCrosswordProgress = useCallback(async () => {
     if (!session) return
 
-    console.log('handleUpdateCrosswordProgress')
-
     const data = localStorage.getItem(storageKey)
 
     const { data: updated } = await supabase
@@ -339,14 +331,12 @@ export default function CrosswordPage() {
       )
       .select()
 
-    if (updated !== null && updated?.length > 0) {
-      console.log({ updated })
+    setShowSuccessProgressSaved(true)
 
+    if (updated !== null && updated?.length > 0) {
       const currentAnswers = JSON.parse(updated[0]?.current_answers as string)
 
       if (!currentAnswers?.guesses) return
-
-      console.log({ currentAnswers })
 
       localStorage.setItem(storageKey, updated[0]?.current_answers as string)
     }
@@ -411,8 +401,6 @@ export default function CrosswordPage() {
     const discrepanciesKeys = targetCellsKeys.filter(
       (cell) => currentProgress?.guesses[cell] !== solvedData?.guesses[cell]
     )
-
-    console.log(discrepanciesKeys)
 
     const randomDiscrepancyIndex = Math.random() * discrepanciesKeys.length
 
@@ -493,11 +481,27 @@ export default function CrosswordPage() {
 
   solvedCrosswordRef?.current?.fillAllAnswers()
 
+  const handleClose = () => {
+    setShowSuccessProgressSaved(false)
+  }
+
   return (
     <Container
       className='nes-container is-dark !mx-auto max-w-[96%] !mb-20'
       component='main'
     >
+      <Snackbar
+        open={true}
+        autoHideDuration={3000}
+        onClose={handleClose}
+        color='success'
+
+        // action={action}
+      >
+        <Alert onClose={handleClose} severity='success' variant='filled'>
+          Progreso guardado con éxito.
+        </Alert>
+      </Snackbar>
       <Box
         sx={{
           display: 'flex',
