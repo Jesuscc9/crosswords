@@ -1,6 +1,6 @@
 import React from 'react'
 import 'nes.css/css/nes.min.css'
-import { Box, useTheme } from '@mui/material'
+import { Box } from '@mui/material'
 import { Link } from 'react-router-dom'
 import Typography from '@mui/material/Typography'
 
@@ -21,8 +21,8 @@ export const MenuPage: React.FC = () => {
               </Typography>
             </div>
 
-            <div>
-              <i className='nes-kirby'></i>
+            <div className='w-[144px] h-[144px]'>
+              <i className='nes-kirby transform origin-top-left scale-150'></i>
             </div>
           </Box>
         </section>

@@ -13,6 +13,7 @@ import {
 import { Link } from 'react-router-dom'
 import AccountCircle from '@mui/icons-material/AccountCircle'
 import MenuIcon from '@mui/icons-material/Menu'
+import { LightModeOutlined } from '@mui/icons-material'
 import Notifications from '@mui/icons-material/Notifications'
 import useSession from '../hooks/useSession'
 import MuiAppBar from '@mui/material/AppBar'
@@ -21,6 +22,8 @@ import styled from '@mui/material/styles/styled'
 import { DarkModeOutlined, KeyboardArrowDown } from '@mui/icons-material'
 import useProfile from '../hooks/useProfile'
 import { FormControl, InputLabel, Select } from '@mui/material'
+import { Check } from '@mui/icons-material'
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 
 const AppBar = styled(MuiAppBar)(({ theme }) => ({
   opacity: 0.9,
@@ -234,7 +237,8 @@ export const Navbar = () => {
             size='large'
             onClick={handleOpenNotifications}
           >
-            <DarkModeOutlined />
+            <LightModeOutlined />
+            <ArrowDropDownIcon />
           </IconButton>
           <Menu
             id='menu-appbar'
@@ -246,28 +250,43 @@ export const Navbar = () => {
             onClose={handleCloseNotifications}
           >
             <MenuItem
+              sx={{
+                justifyContent: 'space-between',
+                width: '200px'
+              }}
               value='light'
               onClick={() => {
                 setMode('light')
               }}
             >
               Claro
+              {mode === 'light' ? <Check color='success' /> : null}
             </MenuItem>
             <MenuItem
+              sx={{
+                justifyContent: 'space-between',
+                width: '200px'
+              }}
               value='dark'
               onClick={() => {
                 setMode('dark')
               }}
             >
               Oscuro
+              {mode === 'dark' ? <Check color='success' /> : null}
             </MenuItem>
             <MenuItem
+              sx={{
+                justifyContent: 'space-between',
+                width: '200px'
+              }}
               value='system'
               onClick={() => {
                 setMode('system')
               }}
             >
               Sistema
+              {mode === 'system' ? <Check color='success' /> : null}
             </MenuItem>
           </Menu>
           <Tooltip title='Abrir ajustes'>

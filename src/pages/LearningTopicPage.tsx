@@ -144,7 +144,9 @@ export default function LearningTopicPage() {
                       <br />
                       <section className='message-list'>
                         <section className='message -left flex flex-col-reverse'>
-                          <i className='nes-kirby flex-shrink-0'></i>
+                          <div className='w-[144px] h-[144px]'>
+                            <i className='nes-kirby transform origin-top-left scale-150'></i>
+                          </div>
                           <div className='nes-balloon from-left'>
                             <p className='text-black'>
                               {item.content.slice(0, stepRevealChar)}
