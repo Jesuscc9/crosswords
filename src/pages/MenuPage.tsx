@@ -1,10 +1,33 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import 'nes.css/css/nes.min.css'
 import { Box } from '@mui/material'
 import { Link } from 'react-router-dom'
 import Typography from '@mui/material/Typography'
+import { supabase } from '../services/supabase'
+
+const getScrumCompletionPercentage = async () => {
+  const { data: scrum } = await supabase
+    .from('crosswords')
+    .select('*')
+    .eq('topic', 'SCRUM')
+
+  const totalScrumLevels = scrum?.length
+
+  const { data: completedScrum } = await supabase
+    .from('user_progress')
+    .select('*, crosswords(*)')
+    .eq('crosswords.topic', 'SCRUM')
+
+  const completedScrumLevels = completedScrum?.length
+
+  console.log({ totalScrumLevels, completedScrumLevels })
+}
 
 export const MenuPage: React.FC = () => {
+  useEffect(() => {
+    getScrumCompletionPercentage()
+  }, [])
+
   return (
     <Box p={2} width={900} maxWidth='90%' mx='auto'>
       <section className=''>

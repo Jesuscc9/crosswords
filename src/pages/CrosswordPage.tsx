@@ -24,6 +24,7 @@ import useSession from '../hooks/useSession'
 import { theme } from '../components/Theme'
 import { Database } from '../types/db.types'
 import { CluesInputOriginal } from '@jaredreisinger/react-crossword/dist/types'
+import { Check } from '@mui/icons-material'
 
 type iCrossword = Database['public']['Tables']['crosswords']['Row']
 
@@ -84,8 +85,7 @@ export default function CrosswordPage() {
   const crosswordRef = useRef<CrosswordProviderImperative>(null)
   const solvedCrosswordRef = useRef<CrosswordProviderImperative>(null)
 
-  const [showSuccessProgressSaved, setShowSuccessProgressSaved] =
-    useState(false)
+  const [isSavingProgress, setIsSavingProgress] = useState(false)
 
   const storageKey = useMemo(
     () => `crossword-${crosswordId}-${session?.user.id}`,
@@ -239,6 +239,8 @@ export default function CrosswordPage() {
 
     if (userProgress?.failed) return
 
+    setIsSavingProgress(true)
+
     const displayInterval = setInterval(() => {
       setDisplayTimeSpent((prevTime) => {
         const newTime = prevTime + 1
@@ -255,7 +257,7 @@ export default function CrosswordPage() {
             })
             .eq('id', prevProgressId)
             .then(() => {
-              setShowSuccessProgressSaved(true)
+              setIsSavingProgress(false)
               console.log('successssss')
             })
 
@@ -293,6 +295,7 @@ export default function CrosswordPage() {
   const updateDbTimeSpent = useCallback(async () => {
     if (timeExpired) return
     if (prevProgressId === undefined) return
+    setIsSavingProgress(true)
 
     await supabase
       .from('user_progress')
@@ -301,7 +304,7 @@ export default function CrosswordPage() {
       })
       .eq('id', prevProgressId)
 
-    setShowSuccessProgressSaved(true)
+    setIsSavingProgress(false)
   }, [dbUpdateTimeSpent, prevProgressId, timeExpired])
 
   // Llama a `updateDbTimeSpent` cada vez que `dbUpdateTimeSpent` cambia, si el tiempo no ha expirado
@@ -320,6 +323,7 @@ export default function CrosswordPage() {
     if (!session) return
 
     const data = localStorage.getItem(storageKey)
+    setIsSavingProgress(true)
 
     const { data: updated } = await supabase
       .from('user_progress')
@@ -336,9 +340,7 @@ export default function CrosswordPage() {
       )
       .select()
 
-    console.log('successssss')
-
-    setShowSuccessProgressSaved(true)
+    setIsSavingProgress(false)
 
     if (updated !== null && updated?.length > 0) {
       const currentAnswers = JSON.parse(updated[0]?.current_answers as string)
@@ -488,27 +490,24 @@ export default function CrosswordPage() {
 
   solvedCrosswordRef?.current?.fillAllAnswers()
 
-  const handleClose = () => {
-    setShowSuccessProgressSaved(false)
-  }
-
   return (
     <Container
       className='nes-container is-dark !mx-auto max-w-[96%] !mb-20'
       component='main'
     >
-      <Snackbar
-        open={showSuccessProgressSaved}
-        autoHideDuration={3000}
-        onClose={handleClose}
-        color='success'
-
-        // action={action}
-      >
-        <Alert severity='success' variant='filled'>
-          Progreso guardado con éxito.
-        </Alert>
-      </Snackbar>
+      <Box display='flex' alignItems='center' gap={1} fontSize={12}>
+        {isSavingProgress ? (
+          <>
+            Guardando progreso...
+            <CircularProgress color='success' size={20} />
+          </>
+        ) : (
+          <>
+            Progreso guardado
+            <Check color='success' />
+          </>
+        )}
+      </Box>
       <Box
         sx={{
           display: 'flex',
