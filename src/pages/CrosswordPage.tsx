@@ -495,11 +495,19 @@ export default function CrosswordPage() {
       className='nes-container is-dark !mx-auto max-w-[96%] !mb-20'
       component='main'
     >
-      <Box display='flex' alignItems='center' gap={1} fontSize={12}>
+      <Box
+        display='flex'
+        alignItems='center'
+        sx={{
+          opacity: '0.7'
+        }}
+        gap={1}
+        fontSize={12}
+      >
         {isSavingProgress ? (
           <>
             Guardando progreso...
-            <CircularProgress color='success' size={20} />
+            <CircularProgress color='success' size={22} />
           </>
         ) : (
           <>
