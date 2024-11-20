@@ -3,7 +3,6 @@ import { supabase } from '../services/supabase'
 import { useNavigate, Link } from 'react-router-dom'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
-import RegisterImageBg from '../assets/loginbg.avif'
 import 'nes.css/css/nes.min.css'
 import { AppLayout } from '../components/AppLayout'
 
@@ -200,7 +199,7 @@ export default function Register() {
             <div style={{ marginTop: '1.5rem' }}>
               <p className='nes-text'>
                 ¿Ya tienes cuenta?{' '}
-                <Link to='/login' className='nes-text is-primary'>
+                <Link to='/' className='nes-text is-primary'>
                   Inicia sesión aquí
                 </Link>
               </p>
@@ -212,7 +211,7 @@ export default function Register() {
             <p className='nes-text'>Revisa tu correo y confirma tu cuenta.</p>
             <button
               className='nes-btn is-primary'
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/')}
             >
               Ir a Iniciar Sesión
             </button>
