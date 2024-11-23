@@ -5,28 +5,52 @@ import { Link } from 'react-router-dom'
 import Typography from '@mui/material/Typography'
 import { supabase } from '../services/supabase'
 
-const getScrumCompletionPercentage = async () => {
-  const { data: scrum } = await supabase
-    .from('crosswords')
-    .select('*')
-    .eq('topic', 'SCRUM')
-
-  const totalScrumLevels = scrum?.length
-
-  const { data: completedScrum } = await supabase
-    .from('user_progress')
-    .select('*, crosswords(*)')
-    .eq('crosswords.topic', 'SCRUM')
-
-  const completedScrumLevels = completedScrum?.length
-
-  console.log({ totalScrumLevels, completedScrumLevels })
-}
-
 export const MenuPage: React.FC = () => {
+  const [scrumPercentage, setScrumPercentage] = React.useState('0')
+  const [pmbokPercentage, setPmbokPercentage] = React.useState('0')
+
   useEffect(() => {
-    getScrumCompletionPercentage()
+    const getTopicCompletionPercentage = async (topic: string) => {
+      const { data } = await supabase
+        .from('crosswords')
+        .select('*')
+        .eq('topic', topic)
+
+      const totalLevels = data?.length
+
+      const { data: completedData } = await supabase
+        .from('user_progress')
+        .select('*, crosswords(*)')
+        .eq('crosswords.topic', topic)
+        .eq('completed', true)
+
+      const completedLevelsIds = new Set()
+
+      completedData?.forEach((e) => {
+        completedLevelsIds.add(e?.crosswords?.id)
+      })
+
+      console.log({ completedLevelsIds })
+
+      const completedLevels = completedData?.length
+
+      console.log({ totalLevels, completedLevels })
+
+      if (!totalLevels || !completedLevels) return 0
+
+      const division = completedLevelsIds.size / totalLevels
+
+      if (topic === 'SCRUM')
+        setScrumPercentage((Number(division) * 100).toFixed(0))
+      else if (topic === 'PMBOK')
+        setPmbokPercentage((Number(division) * 100).toFixed(0))
+    }
+
+    getTopicCompletionPercentage('SCRUM')
+    getTopicCompletionPercentage('PMBOK')
   }, [])
+
+  console.log({ scrumPercentage })
 
   return (
     <Box p={2} width={900} maxWidth='90%' mx='auto'>
@@ -61,7 +85,7 @@ export const MenuPage: React.FC = () => {
           <Box mt={4} display='flex' alignItems='center' gap={2}>
             <progress
               className='nes-progress !h-[30px] md:!h-[48px]'
-              value='30'
+              value={scrumPercentage}
               max='100'
             ></progress>
             <p
@@ -69,7 +93,7 @@ export const MenuPage: React.FC = () => {
                 margin: 0
               }}
             >
-              30%
+              {scrumPercentage}%
             </p>
           </Box>
         </Link>
@@ -83,7 +107,7 @@ export const MenuPage: React.FC = () => {
           <Box mt={4} display='flex' alignItems='center' gap={2}>
             <progress
               className='nes-progress !h-[30px] md:!h-[48px]'
-              value='90'
+              value={pmbokPercentage}
               max='100'
             ></progress>
             <p
@@ -91,7 +115,7 @@ export const MenuPage: React.FC = () => {
                 margin: 0
               }}
             >
-              90%
+              {pmbokPercentage}%
             </p>
           </Box>
         </Link>

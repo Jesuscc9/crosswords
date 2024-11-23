@@ -14,6 +14,8 @@ import {
   Snackbar,
   Alert
 } from '@mui/material'
+import JSConfetti from 'js-confetti'
+
 import { ErrorDialog } from '../components/ErrorDialog'
 import { supabase } from '../services/supabase'
 import Crossword, {
@@ -391,6 +393,13 @@ export default function CrosswordPage() {
     localStorage.removeItem(storageKey)
   }
 
+  const handleCrosswordWordCorrect = async () => {
+    new JSConfetti().addConfetti({
+      confettiNumber: 20,
+      confettiRadius: 5
+    })
+  }
+
   const handleRevealClue = async () => {
     if (!session?.user.id) return
     if (!crosswordId) return
@@ -438,6 +447,8 @@ export default function CrosswordPage() {
       .single()
 
     if (error || !data) return
+
+    console.log(usedClues)
 
     setUsedClues((prevClues) => [...prevClues, data])
   }
@@ -602,6 +613,7 @@ export default function CrosswordPage() {
                     theme={{
                       highlightBackground: 'orange'
                     }}
+                    onCorrect={handleCrosswordWordCorrect}
                   />
                   <div className='-z-10 invisble pointer-events-none absolute opacity-0'>
                     <Crossword
@@ -673,18 +685,16 @@ export default function CrosswordPage() {
 
         {/* Diálogo de tiempo agotado */}
         <Dialog
-          open={timeExpired && !noCluesLeft && !isCompleted}
+          open={!timeExpired && noCluesLeft && !isCompleted}
           onClose={() =>
             navigate(
               `/app/crosswords/${crosswordTopic}/${crosswordDifficulty}/levels`
             )
           }
         >
-          <DialogTitle>Tiempo Agotado</DialogTitle>
+          <DialogTitle>Pistas agotadas</DialogTitle>
           <DialogContent>
-            <Typography>
-              El tiempo para completar el crucigrama ha expirado.
-            </Typography>
+            <Typography>Has agotado todas las pistas disponibles.</Typography>
           </DialogContent>
           <DialogActions>
             <Stack direction='row' justifyContent='space-between' width='100%'>
