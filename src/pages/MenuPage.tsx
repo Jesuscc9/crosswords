@@ -4,12 +4,17 @@ import { Box } from '@mui/material'
 import { Link } from 'react-router-dom'
 import Typography from '@mui/material/Typography'
 import { supabase } from '../services/supabase'
+import useProfile from '../hooks/useProfile'
 
 export const MenuPage: React.FC = () => {
   const [scrumPercentage, setScrumPercentage] = React.useState('0')
   const [pmbokPercentage, setPmbokPercentage] = React.useState('0')
 
+  const { profile } = useProfile()
+
   useEffect(() => {
+    if (!profile) return
+
     const getTopicCompletionPercentage = async (topic: string) => {
       const { data } = await supabase
         .from('crosswords')
@@ -23,6 +28,10 @@ export const MenuPage: React.FC = () => {
         .select('*, crosswords(*)')
         .eq('crosswords.topic', topic)
         .eq('completed', true)
+        .eq('profile_id', profile?.id)
+
+      console.log(topic)
+      console.log({ completedData })
 
       const completedLevelsIds = new Set()
 
@@ -48,7 +57,7 @@ export const MenuPage: React.FC = () => {
 
     getTopicCompletionPercentage('SCRUM')
     getTopicCompletionPercentage('PMBOK')
-  }, [])
+  }, [profile])
 
   console.log({ scrumPercentage })
 
