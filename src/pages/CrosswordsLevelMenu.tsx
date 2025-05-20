@@ -167,7 +167,8 @@ const CrosswordsLevelsMenu: React.FC = () => {
             },
           }}
         >
-          <Box
+          {/* Commenting per Explicit Request. Uncomment to enable tutorial tile. */}
+          {/* <Box
             className="nes-btn is-primary"
             sx={{
               padding: 2,
@@ -192,7 +193,7 @@ const CrosswordsLevelsMenu: React.FC = () => {
                 style={{ fontSize: "1.5rem", color: "#FFD700" }}
               />
             </Box>
-          </Box>
+          </Box> */}
 
           {levels.map((level, index) => {
             const isUnlocked = true;
