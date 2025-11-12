@@ -77,8 +77,8 @@ export const MenuPage: React.FC = () => {
               </Typography>
             </div>
 
-            <div className='w-[144px] h-[144px]'>
-              <i className='nes-kirby transform origin-top-left scale-150'></i>
+            <div className='w-[144px] h-[144px] flex items-center justify-center'>
+              <span style={{ fontSize: '96px' }}>😊</span>
             </div>
           </Box>
         </section>

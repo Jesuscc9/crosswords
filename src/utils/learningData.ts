@@ -58,12 +58,12 @@ export const learningData: LearningData = {
       video: 'https://www.youtube.com/embed/N6uXuaVRoY8',
       dotColor: 'secondary'
     },
-    // {
-    //   title: 'Desafíos y Beneficios de Scrum',
-    //   content:
-    //     'Scrum ofrece numerosos beneficios, como mayor colaboración, adaptabilidad y enfoque en la entrega de valor. Sin embargo, también presenta desafíos, como la necesidad de disciplina y compromiso del equipo, y el reto de ajustar las prácticas ágiles a diferentes tipos de proyecto.',
-    //   dotColor: 'primary'
-    // },
+    {
+      title: 'Desafíos y Beneficios de Scrum',
+      content:
+        'Scrum ofrece numerosos beneficios, como mayor colaboración, adaptabilidad y enfoque en la entrega de valor. Sin embargo, también presenta desafíos, como la necesidad de disciplina y compromiso del equipo, y el reto de ajustar las prácticas ágiles a diferentes tipos de proyecto.',
+      dotColor: 'primary'
+    },
     {
       title: 'Conclusión',
       content:
@@ -117,12 +117,12 @@ export const learningData: LearningData = {
       video: 'https://www.youtube.com/embed/Og7iI31kwPQ',
       dotColor: 'secondary'
     },
-    // {
-    //   title: 'Beneficios y Desafíos de PMBOK',
-    //   content:
-    //     'PMBOK proporciona una base sólida para la gestión de proyectos al ofrecer una guía exhaustiva y estandarizada. Sin embargo, puede ser un desafío adaptar todos los procesos a proyectos más pequeños o de naturaleza más dinámica, donde se requiere flexibilidad.',
-    //   dotColor: 'primary'
-    // },
+    {
+      title: 'Beneficios y Desafíos de PMBOK',
+      content:
+        'PMBOK proporciona una base sólida para la gestión de proyectos al ofrecer una guía exhaustiva y estandarizada. Sin embargo, puede ser un desafío adaptar todos los procesos a proyectos más pequeños o de naturaleza más dinámica, donde se requiere flexibilidad.',
+      dotColor: 'primary'
+    },
     {
       title: 'Conclusión',
       content:

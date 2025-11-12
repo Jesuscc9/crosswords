@@ -144,8 +144,8 @@ export default function LearningTopicPage() {
                       <br />
                       <section className='message-list'>
                         <section className='message -left flex flex-col-reverse'>
-                          <div className='w-[144px] h-[144px]'>
-                            <i className='nes-kirby transform origin-top-left scale-150'></i>
+                          <div className='w-[144px] h-[144px] flex items-center justify-center'>
+                            <span style={{ fontSize: '96px' }}>😊</span>
                           </div>
                           <div className='nes-balloon from-left'>
                             <p className='text-black'>

@@ -231,7 +231,24 @@ export const Navbar = () => {
           )}
         </Box>
 
-        <Stack direction='row' alignItems='center' sx={{ flexGrow: 0 }}>
+        <Stack direction='row' alignItems='center' sx={{ flexGrow: 0 }} gap={1}>
+          <Button
+            color='inherit'
+            variant='outlined'
+            size='small'
+            href='https://classroom.google.com/c/ODI4NTkxMjE4NTM4?cjc=opvv42cm'
+            target='_blank'
+            rel='noopener noreferrer'
+            sx={{
+              borderColor: 'rgba(255, 255, 255, 0.5)',
+              '&:hover': {
+                borderColor: 'rgba(255, 255, 255, 0.8)',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)'
+              }
+            }}
+          >
+            Classroom
+          </Button>
           <IconButton
             color='inherit'
             size='large'
